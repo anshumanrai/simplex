@@ -264,43 +264,43 @@ class View:
 		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
 
-	def print_xml():
+	def print_xml(self):
 		#create the root element
 		doc = Document()
 		frontViewElem = doc.createElement("front_view")
 		doc.appendChild(frontViewElem)
 		#create the vertices element
 		verticesElem = doc.createElement("vertices")
-		doc.appendChild(verticesElem)
+		frontViewElem.appendChild(verticesElem)
 		#iterate over the edges and identify "unique" vertices
 		vertices_dict = {}
-		for lines in viewDict['solidLines']:
+		for line in self.viewDict['solidLines']:
 			x1,y1,x2,y2,selected = line
 			if not ((x1,y1) in vertices_dict):
 				vertices_dict[(x1,y1)]=(x1,y1)
 				vertexElem1 = doc.createElement("vertex")
-				vertexElem1.setAttribute("x",x1)
-				vertexElem1.setAttribute("y",y1)				
+				vertexElem1.setAttribute("x",str(x1))
+				vertexElem1.setAttribute("y",str(y1))				
 				verticesElem.appendChild(vertexElem1)		
 			if not ((x2,y2) in vertices_dict):
 				vertices_dict[(x2,y2)]=(x2,y2)
 				vertexElem2 = doc.createElement("vertex")
-				vertexElem2.setAttribute("x",x2)
-				vertexElem2.setAttribute("y",y2)
+				vertexElem2.setAttribute("x",str(x2))
+				vertexElem2.setAttribute("y",str(y2))
 				verticesElem.appendChild(vertexElem2)
-		for lines in viewDict['dashedLines']:
+		for line in self.viewDict['dashedLines']:
 			x1,y1,x2,y2,selected = line
 			if not ((x1,y1) in vertices_dict):
 				vertices_dict[(x1,y1)]=(x1,y1)
 				vertexElem1 = doc.createElement("vertex")
-				vertexElem1.setAttribute("x",x1)
-				vertexElem1.setAttribute("y",y1)				
+				vertexElem1.setAttribute("x",str(x1))
+				vertexElem1.setAttribute("y",str(y1))				
 				verticesElem.appendChild(vertexElem1)		
 			if not ((x2,y2) in vertices_dict):
 				vertices_dict[(x2,y2)]=(x2,y2)
 				vertexElem2 = doc.createElement("vertex")
-				vertexElem2.setAttribute("x",x2)
-				vertexElem2.setAttribute("y",y2)
+				vertexElem2.setAttribute("x",str(x2))
+				vertexElem2.setAttribute("y",str(y2))
 				verticesElem.appendChild(vertexElem2)
 		return doc
 
@@ -330,7 +330,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.fileSubMenu.append(self.menuitemOpen)
 	    	# Connect signals
-	    	self.menuitemOpen.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemOpen.connect("activate", self.on_menuitem_open_activated)
 		#create a buffer
             	buf = "Save" 
             	# Create a new menu-item with a name...
@@ -338,7 +338,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.fileSubMenu.append(self.menuitemSave)
 	    	# Connect signals
-	    	self.menuitemSave.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemSave.connect("activate", self.on_menuitem_save_activated)
 		#create a buffer
             	buf = "Save As"
             	# Create a new menu-item with a name...
@@ -346,7 +346,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.fileSubMenu.append(self.menuitemSaveAs)
 	    	# Connect signals
-	    	self.menuitemSaveAs.connect("activate", self.on_menuitem_activated, buf)		
+	    	self.menuitemSaveAs.connect("activate", self.on_menuitem_saveas_activated)		
 		#create a buffer
             	buf = "Scan" 
             	# Create a new menu-item with a name...
@@ -354,7 +354,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.fileSubMenu.append(self.menuitemScan)
 	    	# Connect signals
-	    	self.menuitemScan.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemScan.connect("activate", self.on_menuitem_scan_activated)
 		#create a buffer		
 		#create a buffer
             	buf = "Quit" 
@@ -363,7 +363,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.fileSubMenu.append(self.menuitemQuit)
 	    	# Connect signals
-	    	self.menuitemQuit.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemQuit.connect("activate", self.on_menuitem_quit_activated)
 		#set menu hierarchy for menu and submenu
 		self.fileMenu.set_submenu(self.fileSubMenu)
 		#make the menu bar
@@ -385,7 +385,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.editSubMenu.append(self.menuitemSelect)
 	    	# Connect signals
-	    	self.menuitemSelect.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemSelect.connect("activate", self.on_menuitem_select_activated)
 		#create a buffer
             	buf = "Delete" 
             	# Create a new menu-item with a name...
@@ -393,7 +393,7 @@ class Draw:
             	# ...and add it to the menu.
             	self.editSubMenu.append(self.menuitemDelete)
 	    	# Connect signals
-	    	self.menuitemDelete.connect("activate", self.on_menuitem_activated, buf)
+	    	self.menuitemDelete.connect("activate", self.on_menuitem_delete_activated)
 		
 		#set menu hierarchy for menu and submenu
 		self.editMenu.set_submenu(self.editSubMenu)
@@ -538,10 +538,36 @@ class Draw:
 		return
 	
 	# Print a string when a menu item is selected
-    	def on_menuitem_activated(self, widget, string):
-		if (string == "Quit"):
-			gtk.main_quit()
-        	print "%s" % string
+	def on_menuitem_open_activated(self, widget):
+		return
+	def on_menuitem_save_activated(self, widget):
+		return
+	def on_menuitem_saveas_activated(self,widget):
+		dialog = gtk.FileChooserDialog("Save Project", None, gtk.FILE_CHOOSER_ACTION_SAVE, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		
+		
+		response = dialog.run()
+      		if response == gtk.RESPONSE_OK:
+          		print dialog.get_filename(), 'selected'
+			self.saveAsFile = dialog.get_filename()
+      		elif response == gtk.RESPONSE_CANCEL:
+          		print 'Closed, no files selected'
+			self.saveAsFile = ""
+      		dialog.destroy()
+		if not (self.saveAsFile == ""):
+			view = self.notebookViews[self.mainNotebook.get_current_page()]
+        		xml_str = view.print_xml()
+			f = open(self.saveAsFile, 'w')
+			xml_str.writexml(f)
+			f.close()
+		return
+	def on_menuitem_scan_activated(self, widget):
+		return
+	def on_menuitem_quit_activated(self, widget):
+		return
+	def on_menuitem_select_activated(self, widget):
+		return
+	def on_menuitem_delete_activated(self, widget):
 		return
 	def main(self):
 		gtk.main()
