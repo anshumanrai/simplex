@@ -267,11 +267,16 @@ class View:
 	def print_xml(self):
 		#create the root element
 		doc = Document()
-		frontViewElem = doc.createElement("front_view")
-		doc.appendChild(frontViewElem)
+		if self.type == View.FrontView: 
+			viewElem = doc.createElement("front_view")
+		elif self.type == View.TopView:
+			viewElem = doc.CreateElement("top_view")
+		elif self.type == View.SideView:
+			viewElem = doc.createElement("side_view")		
+		doc.appendChild(viewElem)
 		#create the vertices element
 		verticesElem = doc.createElement("vertices")
-		frontViewElem.appendChild(verticesElem)
+		viewElem.appendChild(verticesElem)
 		#iterate over the edges and identify "unique" vertices
 		vertices_dict = {}
 		for line in self.viewDict['solidLines']:
@@ -302,6 +307,34 @@ class View:
 				vertexElem2.setAttribute("x",str(x2))
 				vertexElem2.setAttribute("y",str(y2))
 				verticesElem.appendChild(vertexElem2)
+		edgesElem = doc.createElement("edges")
+		viewElem.appendChild(edgesElem)
+		for line in self.viewDict['solidLines']:
+			x1,y1,x2,y2,selected = line
+			vertexElem1 = doc.createElement("vertex")
+			vertexElem1.setAttribute("x",str(x1))
+			vertexElem1.setAttribute("y",str(y1))
+			vertexElem2 = doc.createElement("vertex")
+			vertexElem2.setAttribute("x",str(x2))
+			vertexElem2.setAttribute("y",str(y2))
+			edgeElem = doc.createElement("edge")
+			edgeElem.appendChild(vertexElem1)
+			edgeElem.appendChild(vertexElem2)
+			edgeElem.setAttribute("type", "Solid")
+			edgesElem.appendChild(edgeElem)
+		for line in self.viewDict['dashedLines']:
+			x1,y1,x2,y2,selected = line
+			vertexElem1 = doc.createElement("vertex")
+			vertexElem1.setAttribute("x",str(x1))
+			vertexElem1.setAttribute("y",str(y1))
+			vertexElem2 = doc.createElement("vertex")
+			vertexElem2.setAttribute("x",str(x2))
+			vertexElem2.setAttribute("y",str(y2))
+			edgeElem = doc.createElement("edge")
+			edgeElem.appendChild(vertexElem1)
+			edgeElem.appendChild(vertexElem2)
+			edgeElem.setAttribute("type", "dashed")
+			edgesElem.appendChild(edgeElem)
 		return doc
 
 class Draw:
