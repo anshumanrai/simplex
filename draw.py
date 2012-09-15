@@ -558,7 +558,7 @@ class Draw:
 			view = self.notebookViews[self.mainNotebook.get_current_page()]
         		xml_str = view.print_xml()
 			f = open(self.saveAsFile, 'w')
-			xml_str.writexml(f)
+			xml_str.writexml(f, encoding='utf-8', indent='	', newl='\n')
 			f.close()
 		return
 	def on_menuitem_scan_activated(self, widget):
