@@ -166,7 +166,10 @@ class View:
 		ca = self.distance_two_points(x,y,x1,y1)
 		s = (ab + bc + ca)/2
 		area = math.sqrt(s*(s-ab)*(s-bc)*(s-ca))
-		retVal = (2 * area) / ab
+		if not(ab == 0):
+			retVal = (2 * area) / ab
+		else:
+			return 999999
 		return retVal
 
 	def on_DrawingArea_motion_notify(self, widget, event):	
@@ -247,7 +250,7 @@ class View:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, False)
 					else:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, True)
-			
+			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		print "Mouse clicked at ", event.x, event.y
 		return
 
