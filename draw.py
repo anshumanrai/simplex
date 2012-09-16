@@ -222,7 +222,6 @@ class View:
 			xGrid = int(xGrid) * 20
 			yGrid = int(event.y)/20
 			yGrid = int(yGrid) * 20
-			print "x Grid ", xGrid, " yGrid ", yGrid 
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
@@ -598,7 +597,6 @@ class Draw:
 					if not (vertex3d in vertices3d_dict):
 						self.vertices3d.append(vertex3d)
 						vertices3d_dict[vertex3d] = vertex3d
-						print "vertex 3d ", vertex3d
 		'''
 		We look at a sorted view of all possible edges from the 3d vertices Vi, vj
 		For each edge whose projection edge on each of the vthree faces - front, top and side is either contained within			
@@ -608,8 +606,8 @@ class Draw:
 		numVertices3d = len(self.vertices3d)
 		i = 0
 		j = 0
-		for i in range(0, numVertices3d-1):
-			for j in range(i+1, numVertices3d-1):
+		for i in range(0, numVertices3d):
+			for j in range(i+1, numVertices3d):
 				xi,yi,zi = self.vertices3d[i]
 				xj, yj, zj = self.vertices3d[j]
 				currEdge = (xi,yi,zi,xj,yj,zj)
@@ -646,13 +644,13 @@ class Draw:
 		#Evaluate the side view projection of the edge
 		#Case 1, y1 = y2 and z1 = z2 => projection is a point y1,z1
 		if ((y1 == y2) and (z1 == z2)):
-			vertexProjected = (y1,z1)
-			if not (self.sideView.vertex_in_view(vertexProjected)):
+			vertexProjected = (y1,z1)				
+			if not (self.sideView.vertex_in_view(vertexProjected)):				
 				return False
 		else:
 			#=>projection is an edge
 			edgeProjected = (y1, z1, y2, z2)
-			if not(self.topView.edge_in_view(edgeProjected)):
+			if not(self.sideView.edge_in_view(edgeProjected)):
 				return False
 		return True
 	
