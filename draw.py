@@ -128,7 +128,7 @@ class View:
 			print "0"
 			return 0
 		if (x == x2) and (y == y2):
-			print 0
+			print "0"
 			return 0
 		x = float(x)
 		y = float(y)
@@ -501,7 +501,7 @@ class Draw:
 		self.buttonDashedLine.connect("clicked", self.on_buttonDashedLine_clicked)
 		self.buttonSelect.connect("clicked", self.on_buttonSelect_clicked)
 		self.buttonDelete.connect("clicked", self.on_buttonDelete_clicked)
-
+		self.mainWindow.connect("key-press-event", self.on_keypress)
 		#finally show the widgets
 		self.mainVBox.show()
 		self.menuitemOpen.show()
@@ -561,6 +561,9 @@ class Draw:
 		self.selectMode = False
 		self.solidLineMode = False
 		self.dashedLineMode = False
+		self.handle_delete()
+
+	def handle_delete(self):
 		self.currView = self.notebookViews[self.mainNotebook.get_current_page()]
 		#get the current active view
 		#iterate over the lines and delete the selected lines
@@ -629,6 +632,10 @@ class Draw:
 				xml_doc_out.documentElement.appendChild(copyNode);
 			xml_doc_out.writexml(f, encoding='utf-8', indent='	', newl='\n')
 			f.close()
+		return
+	def on_keypress(self, widget, event):
+		if (event.keyval == gtk.keysyms.Delete):  
+			self.handle_delete()		
 		return
 	def on_menuitem_scan_activated(self, widget):
 		return
