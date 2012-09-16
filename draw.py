@@ -23,6 +23,7 @@ class View:
 		self.viewDict = {}
 		self.viewDict['solidLines'] = []
 		self.viewDict['dashedLines'] = []
+		self.viewDict['vertices'] = []
 		#initialize widgets
 		self.drawingArea = gtk.DrawingArea()
         	self.scrolledWindow = gtk.ScrolledWindow()
@@ -274,7 +275,8 @@ class View:
 		if self.drawObject.solidLineMode : 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
 		elif self.drawObject.dashedLineMode:
-			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))			
+			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
+		self.compute_vertices()	
 		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
 
@@ -282,6 +284,27 @@ class View:
 		#delete all the edges
 		#read from xml and insert edges accordingly
 		return
+
+	def compute_vertices(self):
+		vertices_dict = {}
+		self.viewDict['vertices'] = []
+		vertices_list = self.viewDict['vertices']
+		for line in self.viewDict['solidLines']:
+			x1,y1,x2,y2,selected = line
+			if not ((x1,y1) in vertices_dict):
+				vertices_dict[(x1,y1)]=(x1,y1)
+				vertices_list.append((x1,y1))	
+			if not ((x2,y2) in vertices_dict):
+				vertices_dict[(x2,y2)]=(x2,y2)
+				vertices_list.append((x2,y2))
+		for line in self.viewDict['dashedLines']:
+			x1,y1,x2,y2,selected = line
+			if not ((x1,y1) in vertices_dict):
+				vertices_dict[(x1,y1)]=(x1,y1)
+				vertices_list.append((x1,y1))	
+			if not ((x2,y2) in vertices_dict):
+				vertices_dict[(x2,y2)]=(x2,y2)
+				vertices_list.append((x2,y2))
 
 	def print_xml(self):
 		#create the root element
@@ -296,38 +319,17 @@ class View:
 		#create the vertices element
 		verticesElem = doc.createElement("vertices")
 		viewElem.appendChild(verticesElem)
-		#iterate over the edges and identify "unique" vertices
-		vertices_dict = {}
-		for line in self.viewDict['solidLines']:
-			x1,y1,x2,y2,selected = line
-			if not ((x1,y1) in vertices_dict):
-				vertices_dict[(x1,y1)]=(x1,y1)
-				vertexElem1 = doc.createElement("vertex")
-				vertexElem1.setAttribute("x",str(x1))
-				vertexElem1.setAttribute("y",str(y1))				
-				verticesElem.appendChild(vertexElem1)		
-			if not ((x2,y2) in vertices_dict):
-				vertices_dict[(x2,y2)]=(x2,y2)
-				vertexElem2 = doc.createElement("vertex")
-				vertexElem2.setAttribute("x",str(x2))
-				vertexElem2.setAttribute("y",str(y2))
-				verticesElem.appendChild(vertexElem2)
-		for line in self.viewDict['dashedLines']:
-			x1,y1,x2,y2,selected = line
-			if not ((x1,y1) in vertices_dict):
-				vertices_dict[(x1,y1)]=(x1,y1)
-				vertexElem1 = doc.createElement("vertex")
-				vertexElem1.setAttribute("x",str(x1))
-				vertexElem1.setAttribute("y",str(y1))				
-				verticesElem.appendChild(vertexElem1)		
-			if not ((x2,y2) in vertices_dict):
-				vertices_dict[(x2,y2)]=(x2,y2)
-				vertexElem2 = doc.createElement("vertex")
-				vertexElem2.setAttribute("x",str(x2))
-				vertexElem2.setAttribute("y",str(y2))
-				verticesElem.appendChild(vertexElem2)
+		#iterate over vertices and add them to the xml
+		for vertex in self.viewDict['vertices']:
+			x1,y1 = vertex
+			vertexElem1 = doc.createElement("vertex")
+			vertexElem1.setAttribute("x",str(x1))
+			vertexElem1.setAttribute("y",str(y1))				
+			verticesElem.appendChild(vertexElem1)
+		#create the edges element
 		edgesElem = doc.createElement("edges")
 		viewElem.appendChild(edgesElem)
+		#iterate over the edges and add them to the xml
 		for line in self.viewDict['solidLines']:
 			x1,y1,x2,y2,selected = line
 			vertexElem1 = doc.createElement("vertex")
@@ -592,6 +594,7 @@ class Draw:
 			i = i + 1
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]
 		currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+		currView.compute_vertices()		
 		return
 	
 	# Print a string when a menu item is selected
