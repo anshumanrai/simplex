@@ -63,7 +63,8 @@ class View:
 	def add_to_notebook(self, notebook):
 		notebook.append_page(self.table, self.labelView)		
 		return
-	def drawingarea_expose(self, widget, data):		
+	def drawingarea_expose(self, widget, data):
+		print "Exposing"		
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
@@ -75,8 +76,7 @@ class View:
 		return
 
 
-	def draw_line(self,x1, y1, x2, y2, selected, width):	
-		#print "drawing a solid line from ", x1, ",", y1, " to ", x2, ",", y2
+	def draw_line(self,x1, y1, x2, y2, selected, width):
 		self.cairoContext.set_dash(())
 		if selected:
 			self.cairoContext.set_source_rgb(1,0,0)
@@ -262,6 +262,11 @@ class View:
 		elif self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))			
 		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+		return
+
+	def import_xml(self, xml_str):
+		#delete all the edges
+		#read from xml and insert edges accordingly
 		return
 
 	def print_xml(self):
@@ -568,6 +573,8 @@ class Draw:
 				print dashedLines
 				i = i -1
 			i = i + 1
+		currView = self.notebookViews[self.mainNotebook.get_current_page()]
+		currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
 	
 	# Print a string when a menu item is selected
