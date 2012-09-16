@@ -53,6 +53,8 @@ class View:
 		self.drawingArea.connect('expose-event',self.drawingarea_expose)
 		self.drawingArea.set_events(gtk.gdk.EXPOSURE_MASK | gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		return
+	
+	
 	def show(self):
 		self.drawingArea.show()
 		self.scrolledWindow.show()
@@ -329,8 +331,8 @@ class View:
 
 class Draw:
 	def __init__(self):
-		self.mainWindowWidth = 460
-		self.mainWindowHeight = 420
+		self.mainWindowWidth = 500
+		self.mainWindowHeight = 500
 		self.solidLineMode = False
 		self.dashedLineMode = False
 		self.selectMode = False
@@ -422,6 +424,35 @@ class Draw:
 		#append menu items to menu bar and add to main v box		
 		self.menuBar.append(self.editMenu)
 
+
+		#create menu items
+		self.inferMenu = gtk.MenuItem("Infer")
+		self.inferSubMenu = gtk.Menu()
+
+		#create menu sub items
+		#create a buffer
+		buf = "Model" 
+		# Create a new menu-item with a name...
+		self.menuitemInferModel = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.inferSubMenu.append(self.menuitemInferModel)
+		# Connect signals
+		self.menuitemInferModel.connect("activate", self.on_menuitem_infer_model_activated)
+		
+		#create a buffer
+		buf = "Save As" 
+		# Create a new menu-item with a name...
+		self.menuitemInferSaveAs = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.inferSubMenu.append(self.menuitemInferSaveAs)
+		# Connect signals
+		self.menuitemInferSaveAs.connect("activate", self.on_menuitem_infer_saveas_activated)
+		
+		#set menu hierarchy for menu and submenu
+		self.inferMenu.set_submenu(self.inferSubMenu)
+		#append menu items to menu bar and add to main v box		
+		self.menuBar.append(self.inferMenu)
+		
 		#init notebook for display of views
 		self.mainNotebook = gtk.Notebook()
 		self.mainNotebook.set_tab_pos(gtk.POS_TOP)		
@@ -488,6 +519,11 @@ class Draw:
 		self.menuitemDelete.show()
 		self.editMenu.show()
 		self.editSubMenu.show()
+		self.menuitemInferModel.show()
+		self.menuitemInferSaveAs.show()
+		self.inferMenu.show()
+		self.inferSubMenu.show()
+
 		self.menuBar.show()
 		self.mainNotebook.show()
 		self.buttonHBox.show()
@@ -502,7 +538,42 @@ class Draw:
 
 
 		return
-	def compute_3d_vertices(self):
+	def infer_3d_model(self):
+		#We look at the front view vertices and the side view vertices
+		self.vertices3d = []
+		frontViewVertices = self.frontView.viewDict['vertices']
+		topViewVertices = self.topView.viewDict['vertices']
+		vertices3d_dict = {}
+		for vertex_front in frontViewVertices:
+			x_front, z_front =  vertex_front
+			for vertex_top in topViewVertices:
+				x_top, y_top = vertex_top
+				if x_front == x_top:
+					vertex3d = (x_front, y_top, z_front)
+					if not (vertex3d in vertices3d_dict):
+						self.vertices3d.append(vertex3d)
+						vertices3d_dict[vertex3d] = vertex3d
+						print "vertex 3d ", vertex3d
+		return 
+	def print_xml_3d_model(self):
+		#create the root element
+		doc = Document()
+		solidElem = doc.createElement("solid")		
+		doc.appendChild(solidElem)
+		#create the vertices element
+		verticesElem = doc.createElement("vertices")
+		solidElem.appendChild(verticesElem)
+		#iterate over vertices and add them to the xml
+		for vertex in self.vertices3d:
+			x,y,z = vertex
+			vertexElem1 = doc.createElement("vertex")
+			vertexElem1.setAttribute("x",str(x))
+			vertexElem1.setAttribute("y",str(y))
+			vertexElem1.setAttribute("z",str(z))
+			verticesElem.appendChild(vertexElem1)
+		return doc
+
+	def infer_3d_edges(self):
 		return
 
 	def on_buttonSolidLine_clicked(self, widget):
@@ -564,6 +635,7 @@ class Draw:
 	def on_menuitem_save_activated(self, widget):
 		return
 	def on_menuitem_saveas_activated(self,widget):
+		self.saveAsFile = ""
 		dialog = gtk.FileChooserDialog("Save Project", None, gtk.FILE_CHOOSER_ACTION_SAVE, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
 		
 		
@@ -596,6 +668,28 @@ class Draw:
 				copyNode = xml_doc_out.importNode(ele, True);
 				xml_doc_out.documentElement.appendChild(copyNode);
 			xml_doc_out.writexml(f, encoding='utf-8', indent='	', newl='\n')
+			f.close()
+		return
+	
+	def on_menuitem_infer_model_activated(self, widget):
+		self.infer_3d_model()
+		return
+	def on_menuitem_infer_saveas_activated(self, widget):
+		self.saveAsFileModel = ""		
+		dialog = gtk.FileChooserDialog("Save Model", None, gtk.FILE_CHOOSER_ACTION_SAVE, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		
+		
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			self.saveAsFileModel = dialog.get_filename()
+		elif response == gtk.RESPONSE_CANCEL:
+			self.saveAsFileModel = ""
+		dialog.destroy()
+		if not (self.saveAsFileModel == ""):
+			#get the xml of each view
+			model_xml_doc = print_xml_3d_model()
+			f = open(self.saveAsFileModel, 'w')
+			xml_doc_model.writexml(f, encoding='utf-8', indent='	', newl='\n')
 			f.close()
 		return
 	def on_keypress(self, widget, event):
