@@ -369,7 +369,7 @@ class View:
 			edgeElem = doc.createElement("edge")
 			edgeElem.appendChild(vertexElem1)
 			edgeElem.appendChild(vertexElem2)
-			edgeElem.setAttribute("type", "dashed")
+			edgeElem.setAttribute("type", "Dashed")
 			edgesElem.appendChild(edgeElem)
 		return doc
 
@@ -768,10 +768,13 @@ class Draw:
 			#handle all the views	
 			frontViewEdges = root.findall("./front_view/edges/edge")
 			solidLines = self.frontView.viewDict['solidLines']
-			dashedLines = self.frontView.viewDict['dashedLines']			
+			dashedLines = self.frontView.viewDict['dashedLines']
+			print frontViewEdges			
 			for edge in frontViewEdges:
+				print edge
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
+				print type
 				vertices = edge.findall("./vertex")
 				vertex1 = vertices[0]
 				vertex2 = vertices[1]
@@ -779,12 +782,11 @@ class Draw:
 				y1 = int(vertex1.attrib['y'])
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
-				if (type == "solid"):
-					#store line segments as end points and selected flag		
-					if self.drawObject.solidLineMode : 
-						solidLines.append((x1,y1,x2,y2,False))
-					elif self.drawObject.dashedLineMode:
-						dashedLines.append((x1,y1,x2,y2,False))
+				if (type == "Solid"):
+					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
+					solidLines.append((x1,y1,x2,y2,False))
+				elif (type == "Dashed"):
+					dashedLines.append((x1,y1,x2,y2,False))
 			self.frontView.compute_vertices()	
 			self.frontView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
 			topViewEdges = root.findall("./front_view/edges/edge")
@@ -800,12 +802,11 @@ class Draw:
 				y1 = int(vertex1.attrib['y'])
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
-				if (type == "solid"):
-					#store line segments as end points and selected flag		
-					if self.drawObject.solidLineMode : 
-						solidLines.append((x1,y1,x2,y2,False))
-					elif self.drawObject.dashedLineMode:
-						dashedLines.append((x1,y1,x2,y2,False))
+				if (type == "Solid"):
+					solidLines.append((x1,y1,x2,y2,False))
+					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
+				elif (type == "Dashed"):
+					dashedLines.append((x1,y1,x2,y2,False))
 			self.topView.compute_vertices()	
 			self.topView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
 			sideViewEdges = root.findall("./front_view/edges/edge")
@@ -821,12 +822,11 @@ class Draw:
 				y1 = int(vertex1.attrib['y'])
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
-				if (type == "solid"):
-					#store line segments as end points and selected flag		
-					if self.drawObject.solidLineMode : 
-						solidLines.append((x1,y1,x2,y2,False))
-					elif self.drawObject.dashedLineMode:
-						dashedLines.append((x1,y1,x2,y2,False))
+				if (type == "Solid"):
+					solidLines.append((x1,y1,x2,y2,False))
+					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
+				elif (type == "Dashed"):
+					dashedLines.append((x1,y1,x2,y2,False))
 			self.sideView.compute_vertices()	
 			self.sideView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))		
 		
