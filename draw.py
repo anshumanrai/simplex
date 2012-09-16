@@ -677,16 +677,12 @@ class Draw:
 		for edge in self.edges3d:
 			x1,y1,z1,x2,y2,z2 = edge
 			edgeElem = doc.createElement('edge')
-			vertexElem1 = doc.createElement("vertex")
-			vertexElem1.setAttribute("x",str(x1))
-			vertexElem1.setAttribute("y",str(y1))
-			vertexElem1.setAttribute("z",str(z1))
-			edgeElem.appendChild(vertexElem1)
-			vertexElem2 = doc.createElement("vertex")
-			vertexElem2.setAttribute("x",str(x2))
-			vertexElem2.setAttribute("y",str(y2))
-			vertexElem2.setAttribute("z",str(z2))
-			edgeElem.appendChild(vertexElem2)
+			edgeElem.setAttribute("x1",str(x1))
+			edgeElem.setAttribute("y1",str(y1))
+			edgeElem.setAttribute("z1",str(z1))
+			edgeElem.setAttribute("x2",str(x2))
+			edgeElem.setAttribute("y2",str(y2))
+			edgeElem.setAttribute("z2",str(z2))
 			edgesElem.appendChild(edgeElem)
 		return doc
 
