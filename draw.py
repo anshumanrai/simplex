@@ -687,9 +687,9 @@ class Draw:
 		dialog.destroy()
 		if not (self.saveAsFileModel == ""):
 			#get the xml of each view
-			model_xml_doc = print_xml_3d_model()
+			model_xml_doc = self.print_xml_3d_model()
 			f = open(self.saveAsFileModel, 'w')
-			xml_doc_model.writexml(f, encoding='utf-8', indent='	', newl='\n')
+			model_xml_doc.writexml(f, encoding='utf-8', indent='	', newl='\n')
 			f.close()
 		return
 	def on_keypress(self, widget, event):
