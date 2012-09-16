@@ -71,7 +71,7 @@ class View:
 	def add_to_notebook(self, notebook):
 		notebook.append_page(self.table, self.labelView)		
 		return
-
+	
 	
 	def drawingarea_expose(self, widget, data):
 		self.cairoContext = widget.window.cairo_create()
@@ -87,8 +87,42 @@ class View:
 			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
 			self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
 		return
+		
+	
 
-
+	def vertex_in_view(self, vertexIn):
+		xIn, yIn = vertexIn
+		for vertex in self.viewDict['vertices']:
+			x,y = vertex
+			if ((x == xIn) and (y == yIn)):
+				return True
+		return False
+	def edge_in_view(self, edgeIn):
+		x1In, y1In, x2In, y2In = edgeIn
+		for edge in self.viewDict['solidLines']:
+			x1, y1, x2, y2, type = edge
+			#check if x1In, y1In lies on the edge
+			distancepIn1p1 = self.distance_two_points(x1In,y1In, x1, y1)
+			distancepIn1p2 = self.distance_two_points(x1In,y1In, x2, y2)
+			distancep1p2 = self.distance_two_points(x1,y1,x2,y2)
+			if ((distancepIn1p1 + distancepIn1p2) == distancep1p2):
+				#check if x2In, y2In lies on the edge
+				distancepIn2p1 = self.distance_two_points(x2In,y2In, x1, y1)
+				distancepIn2p2 = self.distance_two_points(x2In,y2In, x2, y2)
+				if ((distancepIn2p1 + distancepIn2p2) == distancep1p2):
+					return True
+		for edge in self.viewDict['dashedLines']:
+			x1, y1, x2, y2, type = edge
+			#check if x1In, y1In lies on the edge
+			distancepIn1p1 = self.distance_two_points(x1In,y1In, x1, y1)
+			distancepIn1p2 = self.distance_two_points(x1In,y1In, x2, y2)
+			distancep1p2 = self.distance_two_points(x1,y1,x2,y2)
+			if ((distancepIn1p1 + distancepIn1p2) == distancep1p2):
+				#check if x2In, y2In lies on the edge
+				distancepIn2p1 = self.distance_two_points(x2In,y2In, x1, y1)
+				distancepIn2p2 = self.distance_two_points(x2In,y2In, x2, y2)
+				if ((distancepIn2p1 + distancepIn2p2) == distancep1p2):
+					return True
 	def draw_line(self,x1, y1, x2, y2, selected, width):
 		self.cairoContext.set_dash(())
 		if selected:
@@ -550,7 +584,7 @@ class Draw:
 
 		return
 	def infer_3d_model(self):
-		#We look at the front view vertices and the side view vertices
+		#We look at the front view vertices and the side view vertices and for each vertex whose x axis values match we add a 3d vertex
 		self.vertices3d = []
 		frontViewVertices = self.frontView.viewDict['vertices']
 		topViewVertices = self.topView.viewDict['vertices']
@@ -565,7 +599,63 @@ class Draw:
 						self.vertices3d.append(vertex3d)
 						vertices3d_dict[vertex3d] = vertex3d
 						print "vertex 3d ", vertex3d
-		return 
+		'''
+		We look at a sorted view of all possible edges from the 3d vertices Vi, vj
+		For each edge whose projection edge on each of the vthree faces - front, top and side is either contained within			
+		an edge on the view or is a vertex on the web, we mark as a 3d edge
+		''' 
+		self.edges3d=[]
+		numVertices3d = len(self.vertices3d)
+		i = 0
+		j = 0
+		for i in range(0, numVertices3d-1):
+			for j in range(i+1, numVertices3d-1):
+				xi,yi,zi = self.vertices3d[i]
+				xj, yj, zj = self.vertices3d[j]
+				currEdge = (xi,yi,zi,xj,yj,zj)
+				if self.valid_edge_3d(currEdge):
+					self.edges3d.append(currEdge)
+
+		return
+	
+		return False
+	def valid_edge_3d(self, edge):
+		x1,y1,z1,x2,y2,z2 = edge		
+		#Evaluate the front view projection of the edge
+		#Case 1, x1 = x2 and z1 = z2 => projection is a point x1,z1
+		if ((x1 == x2) and (z1 == z2)):
+			vertexProjected = (x1,z1)
+			if not (self.frontView.vertex_in_view(vertexProjected)):
+				return False
+		else:
+			#=>projection is an edge
+			edgeProjected = (x1, z1, x2, z2)
+			if not(self.frontView.edge_in_view(edgeProjected)):
+				return False
+		#Evaluate the top view projection of the edge
+		#Case 1, x1 = x2 and y1 = y2 => projection is a point x1,y1
+		if ((x1 == x2) and (y1 == y2)):
+			vertexProjected = (x1,y1)
+			if not (self.topView.vertex_in_view(vertexProjected)):
+				return False
+		else:
+			#=>projection is an edge
+			edgeProjected = (x1, y1, x2, y2)
+			if not(self.topView.edge_in_view(edgeProjected)):
+				return False
+		#Evaluate the side view projection of the edge
+		#Case 1, y1 = y2 and z1 = z2 => projection is a point y1,z1
+		if ((y1 == y2) and (z1 == z2)):
+			vertexProjected = (y1,z1)
+			if not (self.sideView.vertex_in_view(vertexProjected)):
+				return False
+		else:
+			#=>projection is an edge
+			edgeProjected = (y1, z1, y2, z2)
+			if not(self.topView.edge_in_view(edgeProjected)):
+				return False
+		return True
+	
 	def print_xml_3d_model(self):
 		#create the root element
 		doc = Document()
@@ -577,15 +667,32 @@ class Draw:
 		#iterate over vertices and add them to the xml
 		for vertex in self.vertices3d:
 			x,y,z = vertex
+			vertexElem = doc.createElement("vertex")
+			vertexElem.setAttribute("x",str(x))
+			vertexElem.setAttribute("y",str(y))
+			vertexElem.setAttribute("z",str(z))
+			verticesElem.appendChild(vertexElem)
+		#create the edges element
+		edgesElem = doc.createElement("edges")
+		solidElem.appendChild(edgesElem)
+		#iterate over edges and add them to the xml
+		for edge in self.edges3d:
+			x1,y1,z1,x2,y2,z2 = edge
+			edgeElem = doc.createElement('edge')
 			vertexElem1 = doc.createElement("vertex")
-			vertexElem1.setAttribute("x",str(x))
-			vertexElem1.setAttribute("y",str(y))
-			vertexElem1.setAttribute("z",str(z))
-			verticesElem.appendChild(vertexElem1)
+			vertexElem1.setAttribute("x",str(x1))
+			vertexElem1.setAttribute("y",str(y1))
+			vertexElem1.setAttribute("z",str(z1))
+			edgeElem.appendChild(vertexElem1)
+			vertexElem2 = doc.createElement("vertex")
+			vertexElem2.setAttribute("x",str(x2))
+			vertexElem2.setAttribute("y",str(y2))
+			vertexElem2.setAttribute("z",str(z2))
+			edgeElem.appendChild(vertexElem2)
+			edgesElem.appendChild(edgeElem)
 		return doc
 
-	def infer_3d_edges(self):
-		return
+	
 
 	def on_buttonSolidLine_clicked(self, widget):
 		self.solidLineMode = True
