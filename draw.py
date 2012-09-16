@@ -270,7 +270,7 @@ class View:
 		if self.type == View.FrontView: 
 			viewElem = doc.createElement("front_view")
 		elif self.type == View.TopView:
-			viewElem = doc.CreateElement("top_view")
+			viewElem = doc.createElement("top_view")
 		elif self.type == View.SideView:
 			viewElem = doc.createElement("side_view")		
 		doc.appendChild(viewElem)
@@ -588,10 +588,28 @@ class Draw:
 			self.saveAsFile = ""
       		dialog.destroy()
 		if not (self.saveAsFile == ""):
-			view = self.notebookViews[self.mainNotebook.get_current_page()]
-        		xml_str = view.print_xml()
+			#get the xml of each view
+        		front_view_xml_doc = self.frontView.print_xml()
+			top_view_xml_doc = self.topView.print_xml()
+			side_view_xml_doc = self.sideView.print_xml()
 			f = open(self.saveAsFile, 'w')
-			xml_str.writexml(f, encoding='utf-8', indent='	', newl='\n')
+			xml_doc_out = Document()
+			viewsElem = xml_doc_out.createElement("views")
+			xml_doc_out.appendChild(viewsElem)
+			ele = front_view_xml_doc.documentElement;			
+			if not (ele == None):
+				copyNode = xml_doc_out.importNode(ele, True);
+				xml_doc_out.documentElement.appendChild(copyNode);
+			ele = top_view_xml_doc.documentElement;			
+			if not (ele == None):
+				copyNode = xml_doc_out.importNode(ele, True);
+				xml_doc_out.documentElement.appendChild(copyNode);
+
+			ele = side_view_xml_doc.documentElement;	
+			if not (ele == None):
+				copyNode = xml_doc_out.importNode(ele, True);
+				xml_doc_out.documentElement.appendChild(copyNode);
+			xml_doc_out.writexml(f, encoding='utf-8', indent='	', newl='\n')
 			f.close()
 		return
 	def on_menuitem_scan_activated(self, widget):
