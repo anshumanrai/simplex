@@ -26,16 +26,16 @@ class View:
 		self.viewDict['vertices'] = []
 		#initialize widgets
 		self.drawingArea = gtk.DrawingArea()
-        	self.scrolledWindow = gtk.ScrolledWindow()
-        	self.scrolledWindow.add_with_viewport(self.drawingArea)
-       	 	self.table = gtk.Table(3,2)
-        	self.hRuler = gtk.HRuler()
-        	self.vRuler = gtk.VRuler()
-        	self.hRuler.set_range(0, 400, 0, 400)
-        	self.vRuler.set_range(0, 300, 0, 300)
-       	 	self.table.attach(self.hRuler, 1, 2, 0, 1, yoptions=0)
-        	self.table.attach(self.vRuler, 0, 1, 1, 2, xoptions=0)
-        	self.table.attach(self.scrolledWindow, 1, 2, 1, 2)
+		self.scrolledWindow = gtk.ScrolledWindow()
+		self.scrolledWindow.add_with_viewport(self.drawingArea)
+		self.table = gtk.Table(3,2)
+		self.hRuler = gtk.HRuler()
+		self.vRuler = gtk.VRuler()
+		self.hRuler.set_range(0, 400, 0, 400)
+		self.vRuler.set_range(0, 300, 0, 300)
+		self.table.attach(self.hRuler, 1, 2, 0, 1, yoptions=0)
+		self.table.attach(self.vRuler, 0, 1, 1, 2, xoptions=0)
+		self.table.attach(self.scrolledWindow, 1, 2, 1, 2)
 		self.labelView = gtk.Label("")
 		if (self.type == View.FrontView):	
 			self.labelView = gtk.Label("Front View")
@@ -55,12 +55,12 @@ class View:
 		return
 	def show(self):
 		self.drawingArea.show()
-        	self.scrolledWindow.show()
-       	 	self.table.show()
-        	self.hRuler.show()
-        	self.vRuler.show()
-        	self.hRuler.show()
-        	self.vRuler.show()
+		self.scrolledWindow.show()
+		self.table.show()
+		self.hRuler.show()
+		self.vRuler.show()
+		self.hRuler.show()
+		self.vRuler.show()
 		return
 	def add_to_notebook(self, notebook):
 		notebook.append_page(self.table, self.labelView)		
@@ -68,7 +68,6 @@ class View:
 
 	
 	def drawingarea_expose(self, widget, data):
-		print "Exposing"		
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
@@ -124,12 +123,9 @@ class View:
 		return
 	#distance between a point c (x,y) and the segment between the points a (x1, y1) and b (x2, y2) 
 	def distance_vector(self,x,y, x1, y1, x2, y2):
-		print "distance between ", x, ",", y, " and segment between " , x1 , ",", x2, " and ", y1, ",", y2, " is "		
 		if (x == x1) and (y == y1):
-			print "0"
 			return 0
 		if (x == x2) and (y == y2):
-			print "0"
 			return 0
 		x = float(x)
 		y = float(y)
@@ -138,12 +134,11 @@ class View:
 		x2 = float(x2)
 		y2 = float(y2)
 		ab = y2-y1, x2-x1           		# Vector ab
-    		dd = math.sqrt(ab[0]**2+ab[1]**2)         # Length of ab
-    		ab = ab[0]/dd, ab[1]/dd               	# unit vector of ab
-    		n = -ab[1], ab[0]                    	# normal unit vector to ab
-    		ac = x2-x, y2-y          		# vector ac
-    		retVal = math.fabs(ac[0]*n[0]+ac[1]*n[1]) # Projection of ac to n (the minimum distance)
-		print retVal 
+		dd = math.sqrt(ab[0]**2+ab[1]**2)         # Length of ab
+		ab = ab[0]/dd, ab[1]/dd               	# unit vector of ab
+		n = -ab[1], ab[0]                    	# normal unit vector to ab
+		ac = x2-x, y2-y          		# vector ac
+		retVal = math.fabs(ac[0]*n[0]+ac[1]*n[1]) # Projection of ac to n (the minimum distance)
 		return retVal
 
 	#distance between a point a (x1, y1) and a point (x2,y)
@@ -155,12 +150,9 @@ class View:
 		return retVal
 	#distance between a point c (x,y) and the segment between the points a (x1, y1) and b (x2, y2) 
 	def distance_area(self,x,y, x1, y1, x2, y2):
-		print "distance between ", x, ",", y, " and segment between " , x1 , ",", x2, " and ", y1, ",", y2, " is "		
 		if (x == x1) and (y == y1):
-			print "0"
 			return 1
 		if (x == x2) and (y == y2):
-			print 0
 			return 0
 		ab = self.distance_two_points(x1, y1, x2, y2)
 		bc = self.distance_two_points(x2,y2, x,y)
@@ -174,34 +166,20 @@ class View:
 		return retVal
 
 	def on_DrawingArea_motion_notify(self, widget, event):	
-		print "motion notify ", event.x , ",", event.y
 		return		
 
 	def on_DrawingArea_button_pressed(self, widget, event):
-		if event.button == 1:
-         		print "left click"
-     		elif event.button == 2:
-         		print "middle click"
-     		elif event.button == 3:
-         		print "right click"
-
+		
      		# was it a multiple click?
-     		if event.type == gtk.gdk.BUTTON_PRESS:
-         		print "single click"
+		if event.type == gtk.gdk.BUTTON_PRESS:
 			#store the point coordinates
-    			#find the closest point on the grid
+			#find the closest point on the grid
 			xGrid = int(event.x)/20
 			xGrid = int(xGrid) * 20
 			yGrid = int(event.y)/20
 			yGrid = int(yGrid) * 20
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
-			print "clicked"
-			print self.xGridClicked, self.yGridClicked
-		elif event.type == gtk.gdk._2BUTTON_PRESS:
-         		print "double click. ouch, you hurt your user."
-     		elif event.type == gtk.gdk._3BUTTON_PRESS:
-         		print "triple click. ouch, you hurt your user."
 
 		if self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -217,7 +195,6 @@ class View:
 			for line in solidLines:
 				(x1,y1,x2,y2, selected) = line
 				curDistance = self.distance_area(x,y,x1,y1,x2,y2)
-				print "curDistance", curDistance
 				if curDistance < minDistance:
 					minDistance = curDistance
 					solidMinIndex = i
@@ -227,7 +204,6 @@ class View:
 			for line in dashedLines:
 				(x1,y1,x2,y2, selected) = line
 				curDistance = self.distance_area(x,y,x1,y1,x2,y2)
-				print "curDistance", curDistance
 				if curDistance < minDistance:
 					minDistance = curDistance
 					dashedMinIndex = i
@@ -236,23 +212,18 @@ class View:
 						
 				i = i + 1
 			if solidLineSelected:
-					print "solid line selected at ", solidMinIndex
-					print solidLines[solidMinIndex]
 					x1, y1, x2, y2, selected = solidLines[solidMinIndex]
 					if selected:
 						solidLines[solidMinIndex] = (x1, y1, x2, y2, False)
 					else:
 						solidLines[solidMinIndex] = (x1, y1, x2, y2, True)
 			elif dashedLineSelected:
-					print "solid line selected at ", dashedMinIndex
-					print dashedLines[dashedMinIndex]
 					x1, y1, x2, y2, selected = dashedLines[dashedMinIndex]
 					if selected:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, False)
 					else:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, True)
 			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
-		print "Mouse clicked at ", event.x, event.y
 		return
 
 	
@@ -267,8 +238,6 @@ class View:
 		yGrid = int(yGrid) * 20
 		self.xGridReleased = xGrid
 		self.yGridReleased = yGrid
-		print "released"
-		print self.xGridReleased, self.yGridReleased
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
 		#store line segments as end points and selected flag		
@@ -378,46 +347,45 @@ class Draw:
 
 		#create menu sub items
 		#create a buffer
-            	buf = "Open" 
-            	# Create a new menu-item with a name...
-            	self.menuitemOpen = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.fileSubMenu.append(self.menuitemOpen)
-	    	# Connect signals
-	    	self.menuitemOpen.connect("activate", self.on_menuitem_open_activated)
+		buf = "Open" 
+		# Create a new menu-item with a name...
+		self.menuitemOpen = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.fileSubMenu.append(self.menuitemOpen)
+		# Connect signals
+		self.menuitemOpen.connect("activate", self.on_menuitem_open_activated)
 		#create a buffer
-            	buf = "Save" 
-            	# Create a new menu-item with a name...
-            	self.menuitemSave = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.fileSubMenu.append(self.menuitemSave)
-	    	# Connect signals
-	    	self.menuitemSave.connect("activate", self.on_menuitem_save_activated)
+		buf = "Save" 
+		# Create a new menu-item with a name...
+		self.menuitemSave = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.fileSubMenu.append(self.menuitemSave)
+		# Connect signal
+		self.menuitemSave.connect("activate", self.on_menuitem_save_activated)
 		#create a buffer
-            	buf = "Save As"
-            	# Create a new menu-item with a name...
-            	self.menuitemSaveAs = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.fileSubMenu.append(self.menuitemSaveAs)
-	    	# Connect signals
-	    	self.menuitemSaveAs.connect("activate", self.on_menuitem_saveas_activated)		
+		buf = "Save As"
+		# Create a new menu-item with a name...
+		self.menuitemSaveAs = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.fileSubMenu.append(self.menuitemSaveAs)
+		# Connect signals
+		self.menuitemSaveAs.connect("activate", self.on_menuitem_saveas_activated)		
 		#create a buffer
-            	buf = "Scan" 
-            	# Create a new menu-item with a name...
-            	self.menuitemScan = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.fileSubMenu.append(self.menuitemScan)
-	    	# Connect signals
-	    	self.menuitemScan.connect("activate", self.on_menuitem_scan_activated)
-		#create a buffer		
+		buf = "Scan"
+		# Create a new menu-item with a name...
+		self.menuitemScan = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.fileSubMenu.append(self.menuitemScan)
+		# Connect signals
+		self.menuitemScan.connect("activate", self.on_menuitem_scan_activated)
 		#create a buffer
-            	buf = "Quit" 
-            	# Create a new menu-item with a name...
-            	self.menuitemQuit = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.fileSubMenu.append(self.menuitemQuit)
-	    	# Connect signals
-	    	self.menuitemQuit.connect("activate", self.on_menuitem_quit_activated)
+		buf = "Quit" 
+		# Create a new menu-item with a name...
+		self.menuitemQuit = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.fileSubMenu.append(self.menuitemQuit)
+		# Connect signals
+		self.menuitemQuit.connect("activate", self.on_menuitem_quit_activated)
 		#set menu hierarchy for menu and submenu
 		self.fileMenu.set_submenu(self.fileSubMenu)
 		#make the menu bar
@@ -433,21 +401,21 @@ class Draw:
 
 		#create menu sub items
 		#create a buffer
-            	buf = "Select" 
-            	# Create a new menu-item with a name...
-            	self.menuitemSelect = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.editSubMenu.append(self.menuitemSelect)
-	    	# Connect signals
-	    	self.menuitemSelect.connect("activate", self.on_menuitem_select_activated)
+		buf = "Select" 
+		# Create a new menu-item with a name...
+		self.menuitemSelect = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.editSubMenu.append(self.menuitemSelect)
+		# Connect signals
+		self.menuitemSelect.connect("activate", self.on_menuitem_select_activated)
 		#create a buffer
-            	buf = "Delete" 
-            	# Create a new menu-item with a name...
-            	self.menuitemDelete = gtk.MenuItem(buf)
-            	# ...and add it to the menu.
-            	self.editSubMenu.append(self.menuitemDelete)
-	    	# Connect signals
-	    	self.menuitemDelete.connect("activate", self.on_menuitem_delete_activated)
+		buf = "Delete" 
+		# Create a new menu-item with a name...
+		self.menuitemDelete = gtk.MenuItem(buf)
+		# ...and add it to the menu.
+		self.editSubMenu.append(self.menuitemDelete)
+		# Connect signals
+		self.menuitemDelete.connect("activate", self.on_menuitem_delete_activated)
 		
 		#set menu hierarchy for menu and submenu
 		self.editMenu.set_submenu(self.editSubMenu)
@@ -534,10 +502,10 @@ class Draw:
 
 
 		return
-	
+	def compute_3d_vertices(self):
+		return
 
 	def on_buttonSolidLine_clicked(self, widget):
-		print "button solid line clicked"
 		self.solidLineMode = True
 		self.dashedLineMode = False
 		self.selectMode = False
@@ -545,7 +513,6 @@ class Draw:
 		return
 
 	def on_buttonDashedLine_clicked(self, widget):	
-		print "button dashed line clicked"
 		self.dashedLineMode = True
 		self.solidLineMode = False
 		self.selectMode = False
@@ -553,7 +520,6 @@ class Draw:
 		return
 
 	def on_buttonSelect_clicked(self, widget):
-		print "button select clicked"
 		self.selectMode = True
 		self.solidLineMode = False
 		self.dashedLineMode = False
@@ -561,7 +527,6 @@ class Draw:
 		return
 
 	def on_buttonDelete_clicked(self, widget):
-		print "button delete clicked"
 		self.deleteMode = True
 		self.selectMode = False
 		self.solidLineMode = False
@@ -579,8 +544,6 @@ class Draw:
 			(x1,y1,x2,y2, selected) = line
 			if selected:
 				del(solidLines[i])
-				print "deleted solid line at ", i
-				print solidLines
 				i = i -1
 			i = i + 1
 		i = 0
@@ -588,8 +551,6 @@ class Draw:
 			(x1,y1,x2,y2, selected) = line
 			if selected:
 				del(dashedLines[i])
-				print "deleted dashed line at ", i
-				print dashedLines
 				i = i -1
 			i = i + 1
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]
@@ -607,16 +568,14 @@ class Draw:
 		
 		
 		response = dialog.run()
-      		if response == gtk.RESPONSE_OK:
-          		print dialog.get_filename(), 'selected'
+		if response == gtk.RESPONSE_OK:
 			self.saveAsFile = dialog.get_filename()
-      		elif response == gtk.RESPONSE_CANCEL:
-          		print 'Closed, no files selected'
+		elif response == gtk.RESPONSE_CANCEL:
 			self.saveAsFile = ""
-      		dialog.destroy()
+		dialog.destroy()
 		if not (self.saveAsFile == ""):
 			#get the xml of each view
-        		front_view_xml_doc = self.frontView.print_xml()
+			front_view_xml_doc = self.frontView.print_xml()
 			top_view_xml_doc = self.topView.print_xml()
 			side_view_xml_doc = self.sideView.print_xml()
 			f = open(self.saveAsFile, 'w')
