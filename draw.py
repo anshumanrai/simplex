@@ -53,8 +53,12 @@ class View:
 		self.drawingArea.connect('expose-event',self.drawingarea_expose)
 		self.drawingArea.set_events(gtk.gdk.EXPOSURE_MASK | gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		return
-	
-	
+	#Given gtk coordiantes of a drawing area, give out axis coordinates for the y axis 
+	def translate_gtk_to_real(self,x, y):	
+		return (x, self.drawingAreaHeight - y)
+
+	def translate_real_to_gtk(self,x,y):
+		return x, (self.drawingAreaHeight - y)
 	def show(self):
 		self.drawingArea.show()
 		self.scrolledWindow.show()
@@ -73,10 +77,14 @@ class View:
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
-			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line	
+			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
+			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
+			xGridReleaed, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)	
 			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
 		for line in self.viewDict['dashedLines']:
-			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line	
+			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
+			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
+			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
 			self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
 		return
 
@@ -180,8 +188,10 @@ class View:
 			xGrid = int(xGrid) * 20
 			yGrid = int(event.y)/20
 			yGrid = int(yGrid) * 20
+			print "x Grid ", xGrid, " yGrid ", yGrid 
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
+			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
 
 		if self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -240,6 +250,7 @@ class View:
 		yGrid = int(yGrid) * 20
 		self.xGridReleased = xGrid
 		self.yGridReleased = yGrid
+		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
 		#store line segments as end points and selected flag		
