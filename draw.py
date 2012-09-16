@@ -46,6 +46,7 @@ class View:
 		self.drawingArea.set_size_request(self.drawingAreaWidth, self.drawingAreaHeight)
 		self.table.set_size_request(self.tableWidth, self.tableHeight)
 		#connect the signals
+		self.drawingArea.connect("motion-notify-event", self.on_DrawingArea_motion_notify)
 		self.drawingArea.connect("button-press-event", self.on_DrawingArea_button_pressed)
 		self.drawingArea.connect("button-release-event", self.on_DrawingArea_button_released)
 		self.drawingArea.connect('expose-event',self.drawingarea_expose)
@@ -63,6 +64,8 @@ class View:
 	def add_to_notebook(self, notebook):
 		notebook.append_page(self.table, self.labelView)		
 		return
+
+	
 	def drawingarea_expose(self, widget, data):
 		print "Exposing"		
 		self.cairoContext = widget.window.cairo_create()
@@ -89,6 +92,11 @@ class View:
 		return
 
 	def draw_line_dashed(self,x1, y1, x2, y2, selected, width):
+		self.cairoContext.set_dash((5,3))
+		if selected:
+			self.cairoContext.set_source_rgb(1,0,0)
+		else:
+			self.cairoContext.set_source_rgb(0,0,0)
 		self.cairoContext.set_line_width(width)
 		self.cairoContext.move_to(x1, y1)
 		self.cairoContext.line_to(x2, y2)
@@ -160,7 +168,10 @@ class View:
 		area = math.sqrt(s*(s-ab)*(s-bc)*(s-ca))
 		retVal = (2 * area) / ab
 		return retVal
-		
+
+	def on_DrawingArea_motion_notify(self, widget, event):	
+		print "motion notify ", event.x , ",", event.y
+		return		
 
 	def on_DrawingArea_button_pressed(self, widget, event):
 		if event.button == 1:
