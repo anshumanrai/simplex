@@ -789,7 +789,7 @@ class Draw:
 					dashedLines.append((x1,y1,x2,y2,False))
 			self.frontView.compute_vertices()	
 			self.frontView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
-			topViewEdges = root.findall("./front_view/edges/edge")
+			topViewEdges = root.findall("./top_view/edges/edge")
 			solidLines = self.topView.viewDict['solidLines']
 			dashedLines = self.topView.viewDict['dashedLines']			
 			for edge in topViewEdges:
@@ -809,7 +809,7 @@ class Draw:
 					dashedLines.append((x1,y1,x2,y2,False))
 			self.topView.compute_vertices()	
 			self.topView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
-			sideViewEdges = root.findall("./front_view/edges/edge")
+			sideViewEdges = root.findall("./side_view/edges/edge")
 			solidLines = self.sideView.viewDict['solidLines']
 			dashedLines = self.sideView.viewDict['dashedLines']			
 			for edge in sideViewEdges:
