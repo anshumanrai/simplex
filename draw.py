@@ -3,7 +3,7 @@ import pygtk
 import cairo
 import math
 from xml.dom.minidom import Document
-
+import xml.etree.ElementTree as ET
 
 class View:
 	FrontView = 1
@@ -686,8 +686,6 @@ class Draw:
 			edgesElem.appendChild(edgeElem)
 		return doc
 
-	
-
 	def on_buttonSolidLine_clicked(self, widget):
 		self.solidLineMode = True
 		self.dashedLineMode = False
@@ -743,7 +741,98 @@ class Draw:
 	
 	# Print a string when a menu item is selected
 	def on_menuitem_open_activated(self, widget):
+		self.saveAsFile = ""
+		dialog = gtk.FileChooserDialog("Open", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		
+		
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			self.openFile = dialog.get_filename()
+		elif response == gtk.RESPONSE_CANCEL:
+			self.openFile = ""
+		dialog.destroy()
+		if not (self.openFile == ""):
+			#clear the views data
+			self.frontView.viewDict = {}
+			self.topView.viewDict = {}
+			self.sideView.viewDict = {}
+			self.frontView.viewDict['solidLines'] = []
+			self.frontView.viewDict['dashedLines'] = []
+			self.topView.viewDict['solidLines'] = []
+			self.topView.viewDict['dashedLines'] = []
+			self.sideView.viewDict['solidLines'] = []
+			self.sideView.viewDict['dashedLines'] = []
+			#parse the file
+			tree = ET.parse(self.openFile)
+			root = tree.getroot()
+			#handle all the views	
+			frontViewEdges = root.findall("./front_view/edges/edge")
+			solidLines = self.frontView.viewDict['solidLines']
+			dashedLines = self.frontView.viewDict['dashedLines']			
+			for edge in frontViewEdges:
+				#Extract edge type and cordinates of end points 
+				type = edge.attrib['type']
+				vertices = edge.findall("./vertex")
+				vertex1 = vertices[0]
+				vertex2 = vertices[1]
+				x1 = int(vertex1.attrib['x'])
+				y1 = int(vertex1.attrib['y'])
+				x2 = int(vertex2.attrib['x'])
+				y2 = int(vertex2.attrib['y'])
+				if (type == "solid"):
+					#store line segments as end points and selected flag		
+					if self.drawObject.solidLineMode : 
+						solidLines.append((x1,y1,x2,y2,False))
+					elif self.drawObject.dashedLineMode:
+						dashedLines.append((x1,y1,x2,y2,False))
+			self.frontView.compute_vertices()	
+			self.frontView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
+			topViewEdges = root.findall("./front_view/edges/edge")
+			solidLines = self.topView.viewDict['solidLines']
+			dashedLines = self.topView.viewDict['dashedLines']			
+			for edge in topViewEdges:
+				#Extract edge type and cordinates of end points 
+				type = edge.attrib['type']
+				vertices = edge.findall("./vertex")
+				vertex1 = vertices[0]
+				vertex2 = vertices[1]
+				x1 = int(vertex1.attrib['x'])
+				y1 = int(vertex1.attrib['y'])
+				x2 = int(vertex2.attrib['x'])
+				y2 = int(vertex2.attrib['y'])
+				if (type == "solid"):
+					#store line segments as end points and selected flag		
+					if self.drawObject.solidLineMode : 
+						solidLines.append((x1,y1,x2,y2,False))
+					elif self.drawObject.dashedLineMode:
+						dashedLines.append((x1,y1,x2,y2,False))
+			self.topView.compute_vertices()	
+			self.topView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
+			sideViewEdges = root.findall("./front_view/edges/edge")
+			solidLines = self.sideView.viewDict['solidLines']
+			dashedLines = self.sideView.viewDict['dashedLines']			
+			for edge in sideViewEdges:
+				#Extract edge type and cordinates of end points 
+				type = edge.attrib['type']
+				vertices = edge.findall("./vertex")
+				vertex1 = vertices[0]
+				vertex2 = vertices[1]
+				x1 = int(vertex1.attrib['x'])
+				y1 = int(vertex1.attrib['y'])
+				x2 = int(vertex2.attrib['x'])
+				y2 = int(vertex2.attrib['y'])
+				if (type == "solid"):
+					#store line segments as end points and selected flag		
+					if self.drawObject.solidLineMode : 
+						solidLines.append((x1,y1,x2,y2,False))
+					elif self.drawObject.dashedLineMode:
+						dashedLines.append((x1,y1,x2,y2,False))
+			self.sideView.compute_vertices()	
+			self.sideView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))		
+		
 		return
+
+
 	def on_menuitem_save_activated(self, widget):
 		return
 	def on_menuitem_saveas_activated(self,widget):
