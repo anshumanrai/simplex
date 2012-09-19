@@ -79,6 +79,7 @@ class View:
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
+			print "selected ", selected			
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleaed, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)	
 			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
@@ -242,7 +243,8 @@ class View:
 			self.yGridClicked = yGrid
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
 
-		if self.drawObject.selectMode:
+		if self.drawObject.drawMode == self.drawObject.selectMode:
+			print "select mode"
 			#iterate over the lines and the line to which the event point is closest mark as selected
 			x = event.x
 			y = event.y
@@ -329,13 +331,14 @@ class View:
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
-		circles = self.viewDict['circles']		
+		circles = self.viewDict['circles']
+		print "released ", self.drawObject.drawMode		
 		#store line segments as end points and selected flag		
-		if self.drawObject.solidLineMode : 
+		if self.drawObject.drawMode == self.drawObject.solidLineMode : 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
-		elif self.drawObject.dashedLineMode:
+		elif self.drawObject.drawMode == self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
-		else:
+		elif self.drawObject.drawMode == self.drawObject.circleMode:
 			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
 			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
 		self.compute_vertices()	
@@ -424,12 +427,15 @@ class Draw:
 	def __init__(self):
 		self.mainWindowWidth = 500
 		self.mainWindowHeight = 500
-		self.solidLineMode = False
-		self.dashedLineMode = False
-		self.circleMode = False		
-		self.splineMode = False		
-		self.selectMode = False
-		self.deleteMode = False
+		self.modeNotSelected = 0		
+		self.solidLineMode = 1
+		self.dashedLineMode = 2
+		self.rectangleMode = 3
+		self.circleMode = 4		
+		self.splineMode = 5		
+		self.selectMode = 6
+		self.deleteMode = 7
+		self.drawMode = self.modeNotSelected
 		self.notebookViews = []
 	
 		self.mainWindow = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -562,6 +568,8 @@ class Draw:
 		self.buttonDashedLine = gtk.Button()
 		self.buttonDashedLine.set_label("Dashed Line")
 		
+		self.buttonRectangle = gtk.Button()
+		self.buttonRectangle.set_label("Rectangle")
 		self.buttonCircle = gtk.Button()
 		self.buttonCircle.set_label("Circle")
 		self.buttonSpline = gtk.Button()
@@ -574,7 +582,8 @@ class Draw:
 		#add buttons to hbox
 		self.buttonHBox.pack_start(self.buttonSolidLine, False, False)
 		self.buttonHBox.pack_start(self.buttonDashedLine, False, False)
-		self.buttonHBox.pack_start(self.buttonCircle, False, False)
+		self.buttonHBox.pack_start(self.buttonRectangle, False, False)	
+		self.buttonHBox.pack_start(self.buttonCircle, False, False)	
 		self.buttonHBox.pack_start(self.buttonSpline, False, False)				
 		self.buttonHBox.pack_start(self.buttonSelect, False, False)
 		self.buttonHBox.pack_start(self.buttonDelete, False, False)		
@@ -604,8 +613,9 @@ class Draw:
 		
 		self.buttonSolidLine.connect("clicked", self.on_buttonSolidLine_clicked)
 		self.buttonDashedLine.connect("clicked", self.on_buttonDashedLine_clicked)
+		self.buttonRectangle.connect("clicked", self.on_buttonRectangle_clicked)
 		self.buttonCircle.connect("clicked", self.on_buttonCircle_clicked)
-		self.buttonCircle.connect("clicked", self.on_buttonSpline_clicked)
+		self.buttonSpline.connect("clicked", self.on_buttonSpline_clicked)
 		self.buttonSelect.connect("clicked", self.on_buttonSelect_clicked)
 		self.buttonDelete.connect("clicked", self.on_buttonDelete_clicked)
 		self.mainWindow.connect("key-press-event", self.on_keypress)
@@ -632,6 +642,7 @@ class Draw:
 		self.buttonHBox.show()
 		self.buttonSolidLine.show()
 		self.buttonDashedLine.show()
+		self.buttonRectangle.show()
 		self.buttonCircle.show()
 		self.buttonSpline.show()
 		self.buttonSelect.show()
@@ -748,57 +759,31 @@ class Draw:
 		return doc
 
 	def on_buttonSolidLine_clicked(self, widget):
-		self.solidLineMode = True
-		self.dashedLineMode = False	
-		self.circleMode = False	
-		self.splineMode = False			
-		self.selectMode = False
-		self.deleteMode = False
+		self.drawMode = self.solidLineMode
 		return
 
 	def on_buttonDashedLine_clicked(self, widget):	
-		self.dashedLineMode = True
-		self.solidLineMode = False	
-		self.circleMode = False	
-		self.splineMode = False		
-		self.selectMode = False
-		self.deleteMode = False
+		self.drawMode = self.dashedLineMode
+		return
+	
+	def on_buttonRectangle_clicked(self, widget):
+		self.drawMode = self.rectangleMode
 		return
 
 	def on_buttonCircle_clicked(self, widget):
-		self.circleMode = True		
-		self.dashedLineMode = False
-		self.solidLineMode = False			
-		self.splineMode = False
-		self.selectMode = False
-		self.deleteMode = False
+		self.drawMode = self.circleMode
 		return
 
 	def on_buttonSpline_clicked(self, widget):	
-		self.splineMode = True	
-		self.dashedLineMode = False
-		self.solidLineMode = False				
-		self.circleMode = False	
-		self.selectMode = False
-		self.deleteMode = False
+		self.drawMode = self.splineMode
 		return
 
 	def on_buttonSelect_clicked(self, widget):
-		self.selectMode = True
-		self.solidLineMode = False
-		self.dashedLineMode = False	
-		self.circleMode = False	
-		self.splineMode = False			
-		self.deleteMode = False
+		self.drawMode = self.selectMode 
 		return
 
 	def on_buttonDelete_clicked(self, widget):
-		self.deleteMode = True
-		self.selectMode = False
-		self.solidLineMode = False
-		self.dashedLineMode = False	
-		self.circleMode = False	
-		self.splineMode = False	
+		self.drawMode = self.deleteMode
 		self.handle_delete()
 
 	def handle_delete(self):
