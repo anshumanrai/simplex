@@ -245,12 +245,15 @@ class View:
 		if self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
 			x = event.x
-			y = event.y			
+			y = event.y
+			x,y = self.translate_gtk_to_real(event.x, event.y)		
 			solidLines = self.viewDict['solidLines']
 			dashedLines = self.viewDict['dashedLines']
+			circles = self.viewDict['circles']
 			i = 0
 			solidLineSelected = False;
 			dashedLineSelected = False;
+			circleSelected = False
 			#Treat distances less than 1 pixel unit as select zone
 			minDistance = 1000
 			for line in solidLines:
@@ -269,9 +272,26 @@ class View:
 					minDistance = curDistance
 					dashedMinIndex = i
 					dashedLineSelected = True
-					solidLineSelected = False
-						
+					solidLineSelected = False	
 				i = i + 1
+			i=0
+			for circle in circles:
+				(xc,yc,circle,selected) = circle
+				'''
+				for a circle distance is the absolute value of radius minus the distance 
+				between the point and the center of the circle
+				'''
+				distancePointCenter = self.distance_two_points(x, y, xc, yc)
+				curDistance = radius = distancePointCenter
+				if curDistance < 0:	
+					curDistance = (-1) * curDistance
+				if curDistance < minDistance:
+					circleSelected = True
+					solidLineSelected = False
+					dashedLineSelected = False
+					circleMinIndex = i
+				i = i + 1		
+				
 			if solidLineSelected:
 					x1, y1, x2, y2, selected = solidLines[solidMinIndex]
 					if selected:
@@ -284,6 +304,13 @@ class View:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, False)
 					else:
 						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, True)
+			elif circleSelected:
+					xc, yc, radius, selected = circles[circleMinIndex]
+					if selected:
+						circles[circleMinIndex] = (xc, yc, radius, False)
+					else:
+						circles[circleMinIndex] = (xc, yc, radius, True)
+			
 			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
 
@@ -302,8 +329,7 @@ class View:
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
-		circles = self.viewDict['circles']
-		print "in released ", self.drawObject.circleMode		
+		circles = self.viewDict['circles']		
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidLineMode : 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
@@ -781,6 +807,7 @@ class Draw:
 		#iterate over the lines and delete the selected lines
 		solidLines = self.currView.viewDict['solidLines']
 		dashedLines = self.currView.viewDict['dashedLines']
+		circles = self.currView.viewDict['circles']
 		i = 0
 		for line in solidLines:
 			(x1,y1,x2,y2, selected) = line
@@ -793,6 +820,13 @@ class Draw:
 			(x1,y1,x2,y2, selected) = line
 			if selected:
 				del(dashedLines[i])
+				i = i -1
+			i = i + 1
+		i = 0
+		for circle in circles:
+			(xc,yc,radius, selected) = circle
+			if selected:
+				del(circles[i])
 				i = i -1
 			i = i + 1
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]
@@ -830,7 +864,6 @@ class Draw:
 			frontViewEdges = root.findall("./front_view/edges/edge")
 			solidLines = self.frontView.viewDict['solidLines']
 			dashedLines = self.frontView.viewDict['dashedLines']
-			print frontViewEdges			
 			for edge in frontViewEdges:
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
