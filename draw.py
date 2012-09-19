@@ -23,6 +23,7 @@ class View:
 		self.viewDict = {}
 		self.viewDict['solidLines'] = []
 		self.viewDict['dashedLines'] = []
+		self.viewDict['circles'] = []
 		self.viewDict['vertices'] = []
 		#initialize widgets
 		self.drawingArea = gtk.DrawingArea()
@@ -86,8 +87,11 @@ class View:
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
 			self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
+		for circle in self.viewDict['circles']:			
+			(xGridClicked, yGridClicked, radius, selected) = circle
+			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
+			self.draw_circle(xGridClicked, yGridClicked, radius, selected, 1.0)
 		return
-		
 	
 
 	def vertex_in_view(self, vertexIn):
@@ -123,6 +127,18 @@ class View:
 				distancepIn2p2 = self.distance_two_points(x2In,y2In, x2, y2)
 				if ((distancepIn2p1 + distancepIn2p2) == distancep1p2):
 					return True
+	def draw_circle(self,x, y, radius, selected, width):
+		self.cairoContext.set_dash(())
+		if selected:
+			self.cairoContext.set_source_rgb(1,0,0)
+		else:
+			self.cairoContext.set_source_rgb(0,0,0)
+		self.cairoContext.set_line_width(width)
+		self.cairoContext.move_to(x, y)
+		self.cairoContext.arc(x, y, radius, 0, 2*math.pi) 
+		self.cairoContext.stroke()
+		return	
+
 	def draw_line(self,x1, y1, x2, y2, selected, width):
 		self.cairoContext.set_dash(())
 		if selected:
@@ -286,11 +302,16 @@ class View:
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
+		circles = self.viewDict['circles']
+		print "in released ", self.drawObject.circleMode		
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidLineMode : 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
 		elif self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
+		else:
+			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
 		self.compute_vertices()	
 		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
@@ -379,6 +400,8 @@ class Draw:
 		self.mainWindowHeight = 500
 		self.solidLineMode = False
 		self.dashedLineMode = False
+		self.circleMode = False		
+		self.splineMode = False		
 		self.selectMode = False
 		self.deleteMode = False
 		self.notebookViews = []
@@ -512,6 +535,12 @@ class Draw:
 		self.buttonSolidLine.set_label("Solid Line")
 		self.buttonDashedLine = gtk.Button()
 		self.buttonDashedLine.set_label("Dashed Line")
+		
+		self.buttonCircle = gtk.Button()
+		self.buttonCircle.set_label("Circle")
+		self.buttonSpline = gtk.Button()
+		self.buttonSpline.set_label("Spline")
+
 		self.buttonSelect = gtk.Button()
 		self.buttonSelect.set_label("Select")
 		self.buttonDelete = gtk.Button()
@@ -519,6 +548,8 @@ class Draw:
 		#add buttons to hbox
 		self.buttonHBox.pack_start(self.buttonSolidLine, False, False)
 		self.buttonHBox.pack_start(self.buttonDashedLine, False, False)
+		self.buttonHBox.pack_start(self.buttonCircle, False, False)
+		self.buttonHBox.pack_start(self.buttonSpline, False, False)				
 		self.buttonHBox.pack_start(self.buttonSelect, False, False)
 		self.buttonHBox.pack_start(self.buttonDelete, False, False)		
 		#add buttons hbxo to vbox
@@ -547,6 +578,8 @@ class Draw:
 		
 		self.buttonSolidLine.connect("clicked", self.on_buttonSolidLine_clicked)
 		self.buttonDashedLine.connect("clicked", self.on_buttonDashedLine_clicked)
+		self.buttonCircle.connect("clicked", self.on_buttonCircle_clicked)
+		self.buttonCircle.connect("clicked", self.on_buttonSpline_clicked)
 		self.buttonSelect.connect("clicked", self.on_buttonSelect_clicked)
 		self.buttonDelete.connect("clicked", self.on_buttonDelete_clicked)
 		self.mainWindow.connect("key-press-event", self.on_keypress)
@@ -573,6 +606,8 @@ class Draw:
 		self.buttonHBox.show()
 		self.buttonSolidLine.show()
 		self.buttonDashedLine.show()
+		self.buttonCircle.show()
+		self.buttonSpline.show()
 		self.buttonSelect.show()
 		self.buttonDelete.show()
 		self.frontView.show()
@@ -688,14 +723,36 @@ class Draw:
 
 	def on_buttonSolidLine_clicked(self, widget):
 		self.solidLineMode = True
-		self.dashedLineMode = False
+		self.dashedLineMode = False	
+		self.circleMode = False	
+		self.splineMode = False			
 		self.selectMode = False
 		self.deleteMode = False
 		return
 
 	def on_buttonDashedLine_clicked(self, widget):	
 		self.dashedLineMode = True
-		self.solidLineMode = False
+		self.solidLineMode = False	
+		self.circleMode = False	
+		self.splineMode = False		
+		self.selectMode = False
+		self.deleteMode = False
+		return
+
+	def on_buttonCircle_clicked(self, widget):
+		self.circleMode = True		
+		self.dashedLineMode = False
+		self.solidLineMode = False			
+		self.splineMode = False
+		self.selectMode = False
+		self.deleteMode = False
+		return
+
+	def on_buttonSpline_clicked(self, widget):	
+		self.splineMode = True	
+		self.dashedLineMode = False
+		self.solidLineMode = False				
+		self.circleMode = False	
 		self.selectMode = False
 		self.deleteMode = False
 		return
@@ -703,7 +760,9 @@ class Draw:
 	def on_buttonSelect_clicked(self, widget):
 		self.selectMode = True
 		self.solidLineMode = False
-		self.dashedLineMode = False
+		self.dashedLineMode = False	
+		self.circleMode = False	
+		self.splineMode = False			
 		self.deleteMode = False
 		return
 
@@ -711,7 +770,9 @@ class Draw:
 		self.deleteMode = True
 		self.selectMode = False
 		self.solidLineMode = False
-		self.dashedLineMode = False
+		self.dashedLineMode = False	
+		self.circleMode = False	
+		self.splineMode = False	
 		self.handle_delete()
 
 	def handle_delete(self):
@@ -771,10 +832,8 @@ class Draw:
 			dashedLines = self.frontView.viewDict['dashedLines']
 			print frontViewEdges			
 			for edge in frontViewEdges:
-				print edge
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
-				print type
 				vertices = edge.findall("./vertex")
 				vertex1 = vertices[0]
 				vertex2 = vertices[1]
@@ -783,7 +842,6 @@ class Draw:
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
-					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
 					solidLines.append((x1,y1,x2,y2,False))
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,False))
@@ -804,7 +862,6 @@ class Draw:
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
 					solidLines.append((x1,y1,x2,y2,False))
-					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,False))
 			self.topView.compute_vertices()	
@@ -824,7 +881,6 @@ class Draw:
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
 					solidLines.append((x1,y1,x2,y2,False))
-					print "drawing solid line ", x1, ",", y1, ",", x2, ",", y2
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,False))
 			self.sideView.compute_vertices()	
