@@ -20,12 +20,16 @@ class View:
 		self.drawingAreaHeight = 400
 		self.tableWidth = 420
 		self.tableHeight = 400
+		self.zoomFactor = 5
+		self.zoomLevel = 1
 		self.viewDict = {}
 		self.viewDict['solidLines'] = []
 		self.viewDict['dashedLines'] = []
 		self.viewDict['circles'] = []
 		self.viewDict['vertices'] = []
-		#initialize widgets
+		
+
+		#initialze normal area
 		self.drawingArea = gtk.DrawingArea()
 		self.scrolledWindow = gtk.ScrolledWindow()
 		self.scrolledWindow.add_with_viewport(self.drawingArea)
@@ -55,10 +59,21 @@ class View:
 		self.drawingArea.set_events(gtk.gdk.EXPOSURE_MASK | gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		return
 	#Given gtk coordiantes of a drawing area, give out axis coordinates for the y axis 
-	def translate_gtk_to_real(self,x, y):	
+	def translate_gtk_to_real(self,x, y):
+		print "real to gtk ", x, "," , y, ","
+		y = y / (self.zoomFactor * self.zoomLevel)
+		y = self.drawingAreaHeight - y
+		x = x / (self.zoomFactor * self.zoomLevel)
+		
+		print ",", x, ",", y
 		return (x, self.drawingAreaHeight - y)
 
 	def translate_real_to_gtk(self,x,y):
+		print "real to gtk ", x, "," , y, ","
+		x = x * self.zoomLevel * self.zoomFactor
+		y = self.drawingAreaHeight - y
+		y = y * self.zoomLevel * self.zoomFactor
+		print ",", x, ",", y
 		return x, (self.drawingAreaHeight - y)
 	def show(self):
 		self.drawingArea.show()
@@ -79,7 +94,6 @@ class View:
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
-			print "selected ", selected			
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleaed, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)	
 			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
@@ -146,9 +160,11 @@ class View:
 			self.cairoContext.set_source_rgb(1,0,0)
 		else:
 			self.cairoContext.set_source_rgb(0,0,0)
-		self.cairoContext.set_line_width(width)
+		
+		
 		self.cairoContext.move_to(x1, y1)
 		self.cairoContext.line_to(x2, y2)
+		self.cairoContext.set_line_width(width)		
 		self.cairoContext.stroke()
 		return
 
@@ -159,29 +175,46 @@ class View:
 		else:
 			self.cairoContext.set_source_rgb(0,0,0)
 		self.cairoContext.set_line_width(width)
-		self.cairoContext.move_to(x1, y1)
-		self.cairoContext.line_to(x2, y2)
+		x1withZoom = x1 * self.zoomLevel * self.zoomFactor
+		y1withZoom = y1 * self.zoomLevel * self.zoomFactor
+		x2withZoom = x2 * self.zoomLevel * self.zoomFactor
+		y2withZoom = y2 * self.zoomLevel * self.zoomFactor
+		self.cairoContext.move_to(x1withZoom, y1withZoom)
+		self.cairoContext.line_to(x2withZoom, y2withZoom)
 		self.cairoContext.stroke()
 		return
 
 	def draw_grid(self):
 		i = 0 
-		while (i < self.drawingAreaWidth):
+		x1 = i
+		y1 = 0
+		x2 = i
+		y2 = self.drawingAreaHeight
+		xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
+		while (x1 < xDrawingAreaWidth):
 			x1 = i
 			y1 = 0
 			x2 = i
 			y2 = self.drawingAreaHeight
+			x1,y1 = self.translate_real_to_gtk(x1, y1)
+			x2,y2 = self.translate_real_to_gtk(x2, y2)
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
-			i = i + 20
+			i = i + 1
 		i=0
-		while (i < self.drawingAreaHeight):
+		x1 = 0
+		y1 = i
+		x2 = self.drawingAreaWidth
+		y2 = i
+		while (y1 < yDrawingAreaHeight):
 			x1 = 0
 			y1 = i
 			x2 = self.drawingAreaWidth
 			y2 = i
+			x1,y1 = self.translate_real_to_gtk(x1, y1)
+			x2,y2 = self.translate_real_to_gtk(x2, y2)
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
-			i = i + 20
-		return
+			i = i + 1
+
 	#distance between a point c (x,y) and the segment between the points a (x1, y1) and b (x2, y2) 
 	def distance_vector(self,x,y, x1, y1, x2, y2):
 		if (x == x1) and (y == y1):
@@ -235,16 +268,13 @@ class View:
 		if event.type == gtk.gdk.BUTTON_PRESS:
 			#store the point coordinates
 			#find the closest point on the grid
-			xGrid = int(event.x)/20
-			xGrid = int(xGrid) * 20
-			yGrid = int(event.y)/20
-			yGrid = int(yGrid) * 20
+			xGrid = int(event.x)
+			yGrid = int(event.y)
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
 
 		if self.drawObject.drawMode == self.drawObject.selectMode:
-			print "select mode"
 			#iterate over the lines and the line to which the event point is closest mark as selected
 			x = event.x
 			y = event.y
@@ -313,28 +343,24 @@ class View:
 					else:
 						circles[circleMinIndex] = (xc, yc, radius, True)
 			
-			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+			xdrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(drawingAreaWidth, drawingAreaHeight)
+			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xdrawingAreaWidth, ydrawingAreaHeight))
 		return
-
-	
-	
 		
 	def on_DrawingArea_button_released(self, widget, event):
 		
     		#find the closest point on the grid
-		xGrid = int(event.x)/20
-		xGrid = int(xGrid) * 20
-		yGrid = int(event.y)/20
-		yGrid = int(yGrid) * 20
+		xGrid = int(event.x)
+		yGrid = int(event.y)
 		self.xGridReleased = xGrid
 		self.yGridReleased = yGrid
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
 		circles = self.viewDict['circles']
-		print "released ", self.drawObject.drawMode		
 		#store line segments as end points and selected flag		
-		if self.drawObject.drawMode == self.drawObject.solidLineMode : 
+		if self.drawObject.drawMode == self.drawObject.solidLineMode :
+			print "Drawing a line" 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
 		elif self.drawObject.drawMode == self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
@@ -342,7 +368,8 @@ class View:
 			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
 			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
 		self.compute_vertices()	
-		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+		xdrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(drawingAreaWidth, drawingAreaHeight)
+		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xdrawingAreaWidth, ydrawingAreaHeight))
 		return
 
 	def import_xml(self, xml_str):
@@ -563,6 +590,10 @@ class Draw:
 		self.mainWindow.add(self.mainVBox)		
 		#init buttons
 		self.buttonHBox = gtk.HBox()
+		self.buttonZoomIn = gtk.Button()
+		self.buttonZoomIn.set_label("ZoomIn")
+		self.buttonZoomOut = gtk.Button()
+		self.buttonZoomOut.set_label("ZoomOut")
 		self.buttonSolidLine = gtk.Button()
 		self.buttonSolidLine.set_label("Solid Line")
 		self.buttonDashedLine = gtk.Button()
@@ -580,6 +611,8 @@ class Draw:
 		self.buttonDelete = gtk.Button()
 		self.buttonDelete.set_label("Delete")
 		#add buttons to hbox
+		self.buttonHBox.pack_start(self.buttonZoomIn, False, False)
+		self.buttonHBox.pack_start(self.buttonZoomOut, False, False)
 		self.buttonHBox.pack_start(self.buttonSolidLine, False, False)
 		self.buttonHBox.pack_start(self.buttonDashedLine, False, False)
 		self.buttonHBox.pack_start(self.buttonRectangle, False, False)	
@@ -610,7 +643,8 @@ class Draw:
 		#connect the signals
 		
 		self.mainWindow.connect("destroy", lambda w: gtk.main_quit())
-		
+		self.buttonZoomIn.connect("clicked", self.on_buttonZoomIn_clicked)
+		self.buttonZoomOut.connect("clicked", self.on_buttonZoomOut_clicked)
 		self.buttonSolidLine.connect("clicked", self.on_buttonSolidLine_clicked)
 		self.buttonDashedLine.connect("clicked", self.on_buttonDashedLine_clicked)
 		self.buttonRectangle.connect("clicked", self.on_buttonRectangle_clicked)
@@ -640,6 +674,8 @@ class Draw:
 		self.menuBar.show()
 		self.mainNotebook.show()
 		self.buttonHBox.show()
+		self.buttonZoomIn.show()
+		self.buttonZoomOut.show()
 		self.buttonSolidLine.show()
 		self.buttonDashedLine.show()
 		self.buttonRectangle.show()
@@ -757,6 +793,24 @@ class Draw:
 			edgeElem.setAttribute("z2",str(z2))
 			edgesElem.appendChild(edgeElem)
 		return doc
+	def on_buttonZoomIn_clicked(self, widget):
+		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
+		currZoomLevel = currView.zoomLevel
+		if currZoomLevel < 5:
+			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel +  1
+			xDrawingAreaWidth, yDrawingAreaHeight = currView.translate_real_to_gtk(currView.drawingAreaWidth, currView.drawingAreaHeight)
+			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))	
+		return
+
+	def on_buttonZoomOut_clicked(self, widget):		
+		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
+		currZoomLevel = currView.zoomLevel
+		if currZoomLevel > 1:		
+			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel - 1
+			xDrawingAreaWidth, yDrawingAreaHeight = currView.translate_real_to_gtk(currView.drawingAreaWidth, currView.drawingAreaHeight)
+			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))	
+		return
+
 
 	def on_buttonSolidLine_clicked(self, widget):
 		self.drawMode = self.solidLineMode
@@ -838,10 +892,13 @@ class Draw:
 			self.sideView.viewDict = {}
 			self.frontView.viewDict['solidLines'] = []
 			self.frontView.viewDict['dashedLines'] = []
+			self.frontView.viewDict['circles'] = []
 			self.topView.viewDict['solidLines'] = []
 			self.topView.viewDict['dashedLines'] = []
+			self.topView.viewDict['circles'] = []
 			self.sideView.viewDict['solidLines'] = []
 			self.sideView.viewDict['dashedLines'] = []
+			self.sideView.viewDict['circles'] = []
 			#parse the file
 			tree = ET.parse(self.openFile)
 			root = tree.getroot()
