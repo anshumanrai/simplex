@@ -60,21 +60,21 @@ class View:
 		return
 	#Given gtk coordiantes of a drawing area, give out axis coordinates for the y axis 
 	def translate_gtk_to_real(self,x, y):
-		print "real to gtk ", x, "," , y, ","
+		#print "real to gtk ", x, "," , y, ","
 		y = y / (self.zoomFactor * self.zoomLevel)
 		y = self.drawingAreaHeight - y
 		x = x / (self.zoomFactor * self.zoomLevel)
-		
-		print ",", x, ",", y
-		return (x, self.drawingAreaHeight - y)
+
+		#print ",", x, ",", y
+		return (x, y)
 
 	def translate_real_to_gtk(self,x,y):
-		print "real to gtk ", x, "," , y, ","
+		#print "real to gtk ", x, "," , y, ","
 		x = x * self.zoomLevel * self.zoomFactor
-		y = self.drawingAreaHeight - y
 		y = y * self.zoomLevel * self.zoomFactor
-		print ",", x, ",", y
-		return x, (self.drawingAreaHeight - y)
+		y = self.drawingAreaHeight * self.zoomLevel * self.zoomFactor - y
+		#print ",", x, ",", y
+		return (x, y)
 	def show(self):
 		self.drawingArea.show()
 		self.scrolledWindow.show()
@@ -190,14 +190,14 @@ class View:
 		y1 = 0
 		x2 = i
 		y2 = self.drawingAreaHeight
-		xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
-		while (x1 < xDrawingAreaWidth):
+		while (i < self.drawingAreaWidth):
 			x1 = i
 			y1 = 0
 			x2 = i
 			y2 = self.drawingAreaHeight
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
+			print "drawing grid lines from ", x1, ",", y1, " to ", x2, ",", y2
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
 			i = i + 1
 		i=0
@@ -205,13 +205,14 @@ class View:
 		y1 = i
 		x2 = self.drawingAreaWidth
 		y2 = i
-		while (y1 < yDrawingAreaHeight):
+		while (i < self.drawingAreaHeight):
 			x1 = 0
 			y1 = i
 			x2 = self.drawingAreaWidth
 			y2 = i
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
+			print "drawing grid lines from ", x1, ",", y1, " to ", x2, ",", y2
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
 			i = i + 1
 
@@ -272,7 +273,9 @@ class View:
 			yGrid = int(event.y)
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
+			print "point click at ", self.xGridClicked, ",", self.yGridClicked
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
+			print "translated to ", self.xGridClicked, ",", self.yGridClicked
 
 		if self.drawObject.drawMode == self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -360,7 +363,7 @@ class View:
 		circles = self.viewDict['circles']
 		#store line segments as end points and selected flag		
 		if self.drawObject.drawMode == self.drawObject.solidLineMode :
-			print "Drawing a line" 
+			print "Adding a line from ", self.xGridClicked, ", ", self.yGridClicked, " to ", self.xGridReleased, ",", self.yGridReleased 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
 		elif self.drawObject.drawMode == self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
@@ -368,8 +371,8 @@ class View:
 			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
 			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
 		self.compute_vertices()	
-		xdrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(drawingAreaWidth, drawingAreaHeight)
-		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xdrawingAreaWidth, ydrawingAreaHeight))
+		xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
+		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))
 		return
 
 	def import_xml(self, xml_str):
