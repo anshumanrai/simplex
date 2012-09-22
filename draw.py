@@ -320,8 +320,8 @@ class View:
 					else:
 						circles[circleMinIndex] = (xc, yc, radius, True)
 			
-			xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
-			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))
+			
+			self.drawingArea.queue_draw()
 		return
 		
 	def on_DrawingArea_button_released(self, widget, event):
@@ -354,7 +354,7 @@ class View:
 				circles.append((self.xGridClicked, self.yGridClicked, radius, False, False))
 		self.compute_vertices()	
 		
-		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+		self.drawingArea.queue_draw()
 		return
 
 	def import_xml(self, xml_str):
@@ -420,8 +420,8 @@ class Draw:
 	def __init__(self):
 		#initialize variables
 		#initialize mainWindow dimensions
-		self.mainWindowWidth = 960
-		self.mainWindowHeight = 720
+		self.mainWindowWidth = 720
+		self.mainWindowHeight = 640
 		#initialize draw modes
 		self.modeNotSelected = 0		
 		self.lineMode = 1
@@ -772,7 +772,7 @@ class Draw:
 			currZoomLevel = currZoomLevel + 1
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
 			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
-			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
+			currView.drawingArea.queue_draw()
 		return
 
 	def on_buttonZoomOut_clicked(self, widget):		
@@ -782,7 +782,7 @@ class Draw:
 			currZoomLevel = currZoomLevel - 1
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
 			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
-			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
+			currView.drawingArea.queue_draw()
 		return
 
 
@@ -824,6 +824,7 @@ class Draw:
 		lines = self.currView.viewDict['lines']
 		circles = self.currView.viewDict['circles']
 		i = 0
+		
 		for line in lines:
 			(x1,y1,x2,y2, solid, selected) = line
 			if selected:
@@ -838,7 +839,7 @@ class Draw:
 				i = i -1
 			i = i + 1
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]
-		currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
+		currView.drawingArea.queue_draw()
 		currView.compute_vertices()		
 		return
 	
@@ -886,9 +887,9 @@ class Draw:
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,True,False))
 			self.frontView.compute_vertices()	
-			self.frontView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
+			self.frontView.drawingArea.queue_draw()			
 			topViewEdges = root.findall("./top_view/edges/edge")
-			lines = self.topView.viewDict['Lines']			
+			lines = self.topView.viewDict['lines']			
 			for edge in topViewEdges:
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
@@ -904,7 +905,7 @@ class Draw:
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,False, False))
 			self.topView.compute_vertices()	
-			self.topView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
+			self.topView.drawingArea.queue_draw()			
 			sideViewEdges = root.findall("./side_view/edges/edge")
 			lines = self.sideView.viewDict['lines']		
 			for edge in sideViewEdges:
@@ -922,7 +923,7 @@ class Draw:
 				elif (type == "Dashed"):
 					lines.append((x1,y1,x2,y2,True,False))
 			self.sideView.compute_vertices()	
-			self.sideView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))		
+			self.sideView.drawingArea.queue_draw()	
 		
 		return
 
