@@ -449,8 +449,8 @@ class View:
 
 class Draw:
 	def __init__(self):
-		self.mainWindowWidth = 500
-		self.mainWindowHeight = 500
+		self.mainWindowWidth = 960
+		self.mainWindowHeight = 720
 		self.modeNotSelected = 0		
 		self.solidLineMode = 1
 		self.dashedLineMode = 2
