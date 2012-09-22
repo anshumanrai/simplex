@@ -365,8 +365,8 @@ class View:
 			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
 			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
 		self.compute_vertices()	
-		xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
-		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))
+		
+		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
 		return
 
 	def import_xml(self, xml_str):
@@ -795,8 +795,7 @@ class Draw:
 		currZoomLevel = currView.zoomLevel
 		if currZoomLevel < 5:
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel +  1
-			xDrawingAreaWidth, yDrawingAreaHeight = currView.translate_real_to_gtk(currView.drawingAreaWidth, currView.drawingAreaHeight)
-			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))	
+			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
 		return
 
 	def on_buttonZoomOut_clicked(self, widget):		
@@ -804,8 +803,7 @@ class Draw:
 		currZoomLevel = currView.zoomLevel
 		if currZoomLevel > 1:		
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel - 1
-			xDrawingAreaWidth, yDrawingAreaHeight = currView.translate_real_to_gtk(currView.drawingAreaWidth, currView.drawingAreaHeight)
-			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))	
+			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
 		return
 
 
