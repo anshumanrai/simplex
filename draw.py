@@ -60,20 +60,16 @@ class View:
 		return
 	#Given gtk coordiantes of a drawing area, give out axis coordinates for the y axis 
 	def translate_gtk_to_real(self,x, y):
-		#print "real to gtk ", x, "," , y, ","
 		y = y / (self.zoomFactor * self.zoomLevel)
 		y = self.drawingAreaHeight - y
 		x = x / (self.zoomFactor * self.zoomLevel)
 
-		#print ",", x, ",", y
 		return (x, y)
 
 	def translate_real_to_gtk(self,x,y):
-		#print "real to gtk ", x, "," , y, ","
 		x = x * self.zoomLevel * self.zoomFactor
 		y = y * self.zoomLevel * self.zoomFactor
 		y = self.drawingAreaHeight * self.zoomLevel * self.zoomFactor - y
-		#print ",", x, ",", y
 		return (x, y)
 	def show(self):
 		self.drawingArea.show()
@@ -94,8 +90,10 @@ class View:
 		self.draw_grid()
 		for line in self.viewDict['solidLines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
+			print "drawing real solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
-			xGridReleaed, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)	
+			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
+			print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
 			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
 		for line in self.viewDict['dashedLines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
@@ -175,17 +173,13 @@ class View:
 		else:
 			self.cairoContext.set_source_rgb(0,0,0)
 		self.cairoContext.set_line_width(width)
-		x1withZoom = x1 * self.zoomLevel * self.zoomFactor
-		y1withZoom = y1 * self.zoomLevel * self.zoomFactor
-		x2withZoom = x2 * self.zoomLevel * self.zoomFactor
-		y2withZoom = y2 * self.zoomLevel * self.zoomFactor
-		self.cairoContext.move_to(x1withZoom, y1withZoom)
-		self.cairoContext.line_to(x2withZoom, y2withZoom)
+		self.cairoContext.move_to(x1, y1)
+		self.cairoContext.line_to(x2, y2)
 		self.cairoContext.stroke()
 		return
 
 	def draw_grid(self):
-		i = 0 
+		i = 0
 		x1 = i
 		y1 = 0
 		x2 = i
@@ -197,7 +191,6 @@ class View:
 			y2 = self.drawingAreaHeight
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
-			print "drawing grid lines from ", x1, ",", y1, " to ", x2, ",", y2
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
 			i = i + 1
 		i=0
@@ -212,7 +205,6 @@ class View:
 			y2 = i
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
-			print "drawing grid lines from ", x1, ",", y1, " to ", x2, ",", y2
 			self.draw_line(x1, y1, x2, y2, False, 0.1)
 			i = i + 1
 
@@ -273,9 +265,9 @@ class View:
 			yGrid = int(event.y)
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
-			print "point click at ", self.xGridClicked, ",", self.yGridClicked
+			print "translated grid clicked from ", self.xGridClicked, ",", self.yGridClicked, " to "
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
-			print "translated to ", self.xGridClicked, ",", self.yGridClicked
+			print self.xGridClicked, ",", self.yGridClicked
 
 		if self.drawObject.drawMode == self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -328,6 +320,7 @@ class View:
 				i = i + 1		
 				
 			if solidLineSelected:
+					print "solid line selected "
 					x1, y1, x2, y2, selected = solidLines[solidMinIndex]
 					if selected:
 						solidLines[solidMinIndex] = (x1, y1, x2, y2, False)
@@ -346,8 +339,8 @@ class View:
 					else:
 						circles[circleMinIndex] = (xc, yc, radius, True)
 			
-			xdrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(drawingAreaWidth, drawingAreaHeight)
-			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xdrawingAreaWidth, ydrawingAreaHeight))
+			xDrawingAreaWidth, yDrawingAreaHeight = self.translate_real_to_gtk(self.drawingAreaWidth, self.drawingAreaHeight)
+			self.drawingArea.draw(gtk.gdk.Rectangle(0,0,xDrawingAreaWidth, yDrawingAreaHeight))
 		return
 		
 	def on_DrawingArea_button_released(self, widget, event):
@@ -357,13 +350,14 @@ class View:
 		yGrid = int(event.y)
 		self.xGridReleased = xGrid
 		self.yGridReleased = yGrid
+		print "translated grid released from ", self.xGridReleased, ",", self.yGridReleased, " to "
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
+		print self.xGridReleased, ",", self.yGridReleased
 		solidLines = self.viewDict['solidLines']
 		dashedLines = self.viewDict['dashedLines']
 		circles = self.viewDict['circles']
 		#store line segments as end points and selected flag		
 		if self.drawObject.drawMode == self.drawObject.solidLineMode :
-			print "Adding a line from ", self.xGridClicked, ", ", self.yGridClicked, " to ", self.xGridReleased, ",", self.yGridReleased 
 			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
 		elif self.drawObject.drawMode == self.drawObject.dashedLineMode:
 			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
