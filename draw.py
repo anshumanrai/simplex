@@ -101,18 +101,14 @@ class View:
 			print "drawing real line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
-			if solid:			
-				print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
-				self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
-			else:
-				self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased,
- selected, 1.0)
-				print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
-		for circle in self.viewDict['circles']:			
-			(xGridClicked, yGridClicked, radius, selected) = circle
+			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, solid, selected, 1.0)
+		for circle in self.viewDict['circles']:
+			print "circle " 
+			print circle			
+			(xGridClicked, yGridClicked, radius, solid,selected) = circle
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			radius = self.translate_dimension_real_to_gtk(radius)
-			self.draw_circle(xGridClicked, yGridClicked, radius, selected, 1.0)
+			self.draw_circle(xGridClicked, yGridClicked, radius, solid, selected, 1.0)
 		return
 	
 
@@ -137,8 +133,11 @@ class View:
 				distancepIn2p2 = self.distance_two_points(x2In,y2In, x2, y2)
 				if ((distancepIn2p1 + distancepIn2p2) == distancep1p2):
 					return True
-	def draw_circle(self,x, y, radius, selected, width):
-		self.cairoContext.set_dash(())
+	def draw_circle(self,x, y, radius, solid, selected, width):
+		if solid:
+			self.cairoContext.set_dash(())
+		else:
+			self.cairoContext.set_dash((5,3))
 		if selected:
 			self.cairoContext.set_source_rgb(1,0,0)
 		else:
@@ -149,8 +148,12 @@ class View:
 		self.cairoContext.stroke()
 		return	
 
-	def draw_line(self,x1, y1, x2, y2, selected, width):
-		self.cairoContext.set_dash(())
+	def draw_line(self,x1, y1, x2, y2, solid,selected,width):
+		if solid:
+			self.cairoContext.set_dash(())
+		else:
+			self.cairoContext.set_dash((5,3))
+			
 		if selected:
 			self.cairoContext.set_source_rgb(1,0,0)
 		else:
@@ -163,17 +166,6 @@ class View:
 		self.cairoContext.stroke()
 		return
 
-	def draw_line_dashed(self,x1, y1, x2, y2, selected, width):
-		self.cairoContext.set_dash((5,3))
-		if selected:
-			self.cairoContext.set_source_rgb(1,0,0)
-		else:
-			self.cairoContext.set_source_rgb(0,0,0)
-		self.cairoContext.set_line_width(width)
-		self.cairoContext.move_to(x1, y1)
-		self.cairoContext.line_to(x2, y2)
-		self.cairoContext.stroke()
-		return
 
 	def draw_grid(self):
 		i = 0
@@ -188,7 +180,7 @@ class View:
 			y2 = self.drawingAreaHeight
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
-			self.draw_line(x1, y1, x2, y2, False, 0.1)
+			self.draw_line(x1, y1, x2, y2, True, False, 0.1)
 			i = i + 1
 		i=0
 		x1 = 0
@@ -202,7 +194,7 @@ class View:
 			y2 = i
 			x1,y1 = self.translate_real_to_gtk(x1, y1)
 			x2,y2 = self.translate_real_to_gtk(x2, y2)
-			self.draw_line(x1, y1, x2, y2, False, 0.1)
+			self.draw_line(x1, y1, x2, y2, True, False, 0.1)
 			i = i + 1
 
 	#distance between a point c (x,y) and the segment between the points a (x1, y1) and b (x2, y2) 
@@ -289,7 +281,7 @@ class View:
 				i = i + 1
 			
 			for circle in circles:
-				(xc,yc,circle,selected) = circle
+				(xc,yc,circle,solid,selected) = circle
 				'''
 				for a circle distance is the absolute value of radius minus the distance 
 				between the point and the center of the circle
@@ -314,7 +306,7 @@ class View:
 					lines[lineMinIndex] = (x1, y1, x2, y2, solid, True)
 			
 			elif circleSelected:
-					xc, yc, radius, selected = circles[circleMinIndex]
+					xc, yc, radius, solid, selected = circles[circleMinIndex]
 					if selected:
 						circles[circleMinIndex] = (xc, yc, radius, False)
 					else:
@@ -344,6 +336,7 @@ class View:
 				"appending solid line"
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, True, False))
 			elif self.drawObject.drawMode == self.drawObject.circleMode:
+				"appending circle"
 				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
 				circles.append((self.xGridClicked, self.yGridClicked, radius, True, False))	
 		elif self.drawObject.solidMode == self.drawObject.dashed:
