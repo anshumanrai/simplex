@@ -98,14 +98,11 @@ class View:
 		self.draw_grid()
 		for line in self.viewDict['lines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased,solid, selected) = line
-			print "drawing real line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
 			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, solid, selected, 1.0)
 		for circle in self.viewDict['circles']:
-			print "circle " 
-			print circle			
-			(xGridClicked, yGridClicked, radius, solid,selected) = circle
+			(xGridClicked, yGridClicked, radius, solid, selected) = circle
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			radius = self.translate_dimension_real_to_gtk(radius)
 			self.draw_circle(xGridClicked, yGridClicked, radius, solid, selected, 1.0)
@@ -254,9 +251,8 @@ class View:
 			yGrid = int(event.y)
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
-			print "translated grid clicked from ", self.xGridClicked, ",", self.yGridClicked, " to "
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
-			print self.xGridClicked, ",", self.yGridClicked
+			
 
 		if self.drawObject.drawMode == self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -276,8 +272,7 @@ class View:
 				if curDistance < minDistance:
 					minDistance = curDistance
 					lineMinIndex = i
-					lineSelected = True
-					print "line selected" 			
+					lineSelected = True 			
 				i = i + 1
 			
 			for circle in circles:
@@ -298,7 +293,6 @@ class View:
 				i = i + 1		
 				
 			if lineSelected:
-				print "line selected "
 				x1, y1, x2, y2, solid, selected = lines[lineMinIndex]
 				if selected:
 					lines[lineMinIndex] = (x1, y1, x2, y2, solid, False)
@@ -308,9 +302,9 @@ class View:
 			elif circleSelected:
 					xc, yc, radius, solid, selected = circles[circleMinIndex]
 					if selected:
-						circles[circleMinIndex] = (xc, yc, radius, False)
+						circles[circleMinIndex] = (xc, yc, radius, solid, False)
 					else:
-						circles[circleMinIndex] = (xc, yc, radius, True)
+						circles[circleMinIndex] = (xc, yc, radius, solid, True)
 			
 			
 			self.drawingArea.queue_draw()
@@ -323,28 +317,24 @@ class View:
 		yGrid = int(event.y)
 		self.xGridReleased = xGrid
 		self.yGridReleased = yGrid
-		print "translated grid released from ", self.xGridReleased, ",", self.yGridReleased, " to "
-		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
-		print self.xGridReleased, ",", self.yGridReleased
 		lines = self.viewDict['lines']
 		circles = self.viewDict['circles']
-		print self.drawObject.solidMode
-		print self.drawObject.drawMode
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidMode == self.drawObject.solid :
 			if self.drawObject.drawMode == self.drawObject.lineMode :
-				"appending solid line"
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, True, False))
 			elif self.drawObject.drawMode == self.drawObject.circleMode:
-				"appending circle"
+				
 				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
-				circles.append((self.xGridClicked, self.yGridClicked, radius, True, False))	
+				circle = (self.xGridClicked, self.yGridClicked, radius, True, False)
+				circles.append(circle)	
 		elif self.drawObject.solidMode == self.drawObject.dashed:
 			if self.drawObject.drawMode == self.drawObject.lineMode :
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False, False))
 			elif self.drawObject.drawMode == self.drawObject.circleMode:
 				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
-				circles.append((self.xGridClicked, self.yGridClicked, radius, False, False))
+				circle = (self.xGridClicked, self.yGridClicked, radius, False, False)
+				circles.append(circle)
 		self.compute_vertices()	
 		
 		self.drawingArea.queue_draw()
@@ -826,7 +816,7 @@ class Draw:
 			i = i + 1
 		
 		for circle in circles:
-			(xc,yc,radius, selected) = circle
+			(xc,yc,radius, solid, selected) = circle
 			if selected:
 				del(circles[i])
 				i = i -1
