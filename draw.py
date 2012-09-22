@@ -23,7 +23,7 @@ class View:
 		self.zoomFactor = 5
 		self.zoomLevel = 1
 		self.viewDict = {}
-		self.viewDict['Lines'] = []
+		self.viewDict['lines'] = []
 		self.viewDict['circles'] = []
 		self.viewDict['vertices'] = []
 		
@@ -96,7 +96,7 @@ class View:
 	def drawingarea_expose(self, widget, data):
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
-		for line in self.viewDict['Lines']:
+		for line in self.viewDict['lines']:
 			(xGridClicked, yGridClicked, xGridReleased, yGridReleased,solid, selected) = line
 			print "drawing real line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
@@ -271,7 +271,7 @@ class View:
 			x = event.x
 			y = event.y
 			x,y = self.translate_gtk_to_real(event.x, event.y)		
-			lines = self.viewDict['Lines']
+			lines = self.viewDict['lines']
 			circles = self.viewDict['circles']
 			i = 0
 			lineSelected = False;
@@ -334,7 +334,7 @@ class View:
 		print "translated grid released from ", self.xGridReleased, ",", self.yGridReleased, " to "
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		print self.xGridReleased, ",", self.yGridReleased
-		lines = self.viewDict['Lines']
+		lines = self.viewDict['lines']
 		circles = self.viewDict['circles']
 		print self.drawObject.solidMode
 		print self.drawObject.drawMode
@@ -366,7 +366,7 @@ class View:
 		vertices_dict = {}
 		self.viewDict['vertices'] = []
 		vertices_list = self.viewDict['vertices']
-		for line in self.viewDict['Lines']:
+		for line in self.viewDict['lines']:
 			x1,y1,x2,y2,solid, selected = line
 			if not ((x1,y1) in vertices_dict):
 				vertices_dict[(x1,y1)]=(x1,y1)
@@ -398,7 +398,7 @@ class View:
 		edgesElem = doc.createElement("edges")
 		viewElem.appendChild(edgesElem)
 		#iterate over the edges and add them to the xml
-		for line in self.viewDict['Lines']:
+		for line in self.viewDict['lines']:
 			x1,y1,x2,y2,solid,selected = line
 			vertexElem1 = doc.createElement("vertex")
 			vertexElem1.setAttribute("x",str(x1))
@@ -821,7 +821,7 @@ class Draw:
 		self.currView = self.notebookViews[self.mainNotebook.get_current_page()]
 		#get the current active view
 		#iterate over the lines and delete the selected lines
-		lines = self.currView.viewDict['Lines']
+		lines = self.currView.viewDict['lines']
 		circles = self.currView.viewDict['circles']
 		i = 0
 		for line in lines:
@@ -861,9 +861,9 @@ class Draw:
 			self.sideView.viewDict = {}
 			self.frontView.viewDict['lines'] = []
 			self.frontView.viewDict['circles'] = []
-			self.topView.viewDict['Lines'] = []
+			self.topView.viewDict['lines'] = []
 			self.topView.viewDict['circles'] = []
-			self.sideView.viewDict['Lines'] = []
+			self.sideView.viewDict['lines'] = []
 			self.sideView.viewDict['circles'] = []
 			#parse the file
 			tree = ET.parse(self.openFile)
