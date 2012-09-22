@@ -319,6 +319,7 @@ class View:
 		self.yGridReleased = yGrid
 		lines = self.viewDict['lines']
 		circles = self.viewDict['circles']
+		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidMode == self.drawObject.solid :
 			if self.drawObject.drawMode == self.drawObject.lineMode :
