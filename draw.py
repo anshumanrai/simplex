@@ -23,8 +23,7 @@ class View:
 		self.zoomFactor = 5
 		self.zoomLevel = 1
 		self.viewDict = {}
-		self.viewDict['solidLines'] = []
-		self.viewDict['dashedLines'] = []
+		self.viewDict['Lines'] = []
 		self.viewDict['circles'] = []
 		self.viewDict['vertices'] = []
 		
@@ -97,18 +96,18 @@ class View:
 	def drawingarea_expose(self, widget, data):
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
-		for line in self.viewDict['solidLines']:
-			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
-			print "drawing real solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
+		for line in self.viewDict['Lines']:
+			(xGridClicked, yGridClicked, xGridReleased, yGridReleased,solid, selected) = line
+			print "drawing real line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased 
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
 			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
-			print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
-			self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
-		for line in self.viewDict['dashedLines']:
-			(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected) = line
-			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
-			xGridReleased, yGridReleased = self.translate_real_to_gtk(xGridReleased, yGridReleased)
-			self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
+			if solid:			
+				print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
+				self.draw_line(xGridClicked, yGridClicked, xGridReleased, yGridReleased, selected, 1.0)
+			else:
+				self.draw_line_dashed(xGridClicked, yGridClicked, xGridReleased, yGridReleased,
+ selected, 1.0)
+				print "drawing gtk solid line from ", xGridClicked, ",", yGridClicked, " to " , xGridReleased, ",", yGridReleased
 		for circle in self.viewDict['circles']:			
 			(xGridClicked, yGridClicked, radius, selected) = circle
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
@@ -126,19 +125,7 @@ class View:
 		return False
 	def edge_in_view(self, edgeIn):
 		x1In, y1In, x2In, y2In = edgeIn
-		for edge in self.viewDict['solidLines']:
-			x1, y1, x2, y2, type = edge
-			#check if x1In, y1In lies on the edge
-			distancepIn1p1 = self.distance_two_points(x1In,y1In, x1, y1)
-			distancepIn1p2 = self.distance_two_points(x1In,y1In, x2, y2)
-			distancep1p2 = self.distance_two_points(x1,y1,x2,y2)
-			if ((distancepIn1p1 + distancepIn1p2) == distancep1p2):
-				#check if x2In, y2In lies on the edge
-				distancepIn2p1 = self.distance_two_points(x2In,y2In, x1, y1)
-				distancepIn2p2 = self.distance_two_points(x2In,y2In, x2, y2)
-				if ((distancepIn2p1 + distancepIn2p2) == distancep1p2):
-					return True
-		for edge in self.viewDict['dashedLines']:
+		for edge in self.viewDict['lines']:
 			x1, y1, x2, y2, type = edge
 			#check if x1In, y1In lies on the edge
 			distancepIn1p1 = self.distance_two_points(x1In,y1In, x1, y1)
@@ -284,34 +271,23 @@ class View:
 			x = event.x
 			y = event.y
 			x,y = self.translate_gtk_to_real(event.x, event.y)		
-			solidLines = self.viewDict['solidLines']
-			dashedLines = self.viewDict['dashedLines']
+			lines = self.viewDict['Lines']
 			circles = self.viewDict['circles']
 			i = 0
-			solidLineSelected = False;
-			dashedLineSelected = False;
+			lineSelected = False;
 			circleSelected = False
 			#Treat distances less than 1 pixel unit as select zone
 			minDistance = 1000
-			for line in solidLines:
-				(x1,y1,x2,y2, selected) = line
+			for line in lines:
+				(x1,y1,x2,y2,solid,selected) = line
 				curDistance = self.distance_area(x,y,x1,y1,x2,y2)
 				if curDistance < minDistance:
 					minDistance = curDistance
-					solidMinIndex = i
-					solidLineSelected = True 			
+					lineMinIndex = i
+					lineSelected = True
+					print "line selected" 			
 				i = i + 1
-			i = 0			
-			for line in dashedLines:
-				(x1,y1,x2,y2, selected) = line
-				curDistance = self.distance_area(x,y,x1,y1,x2,y2)
-				if curDistance < minDistance:
-					minDistance = curDistance
-					dashedMinIndex = i
-					dashedLineSelected = True
-					solidLineSelected = False	
-				i = i + 1
-			i=0
+			
 			for circle in circles:
 				(xc,yc,circle,selected) = circle
 				'''
@@ -329,19 +305,14 @@ class View:
 					circleMinIndex = i
 				i = i + 1		
 				
-			if solidLineSelected:
-					print "solid line selected "
-					x1, y1, x2, y2, selected = solidLines[solidMinIndex]
-					if selected:
-						solidLines[solidMinIndex] = (x1, y1, x2, y2, False)
-					else:
-						solidLines[solidMinIndex] = (x1, y1, x2, y2, True)
-			elif dashedLineSelected:
-					x1, y1, x2, y2, selected = dashedLines[dashedMinIndex]
-					if selected:
-						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, False)
-					else:
-						dashedLines[dashedMinIndex] = (x1, y1, x2, y2, True)
+			if lineSelected:
+				print "line selected "
+				x1, y1, x2, y2, solid, selected = lines[lineMinIndex]
+				if selected:
+					lines[lineMinIndex] = (x1, y1, x2, y2, solid, False)
+				else:
+					lines[lineMinIndex] = (x1, y1, x2, y2, solid, True)
+			
 			elif circleSelected:
 					xc, yc, radius, selected = circles[circleMinIndex]
 					if selected:
@@ -363,17 +334,24 @@ class View:
 		print "translated grid released from ", self.xGridReleased, ",", self.yGridReleased, " to "
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		print self.xGridReleased, ",", self.yGridReleased
-		solidLines = self.viewDict['solidLines']
-		dashedLines = self.viewDict['dashedLines']
+		lines = self.viewDict['Lines']
 		circles = self.viewDict['circles']
+		print self.drawObject.solidMode
+		print self.drawObject.drawMode
 		#store line segments as end points and selected flag		
-		if self.drawObject.drawMode == self.drawObject.solidLineMode :
-			solidLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
-		elif self.drawObject.drawMode == self.drawObject.dashedLineMode:
-			dashedLines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False))
-		elif self.drawObject.drawMode == self.drawObject.circleMode:
-			radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
-			circles.append((self.xGridClicked, self.yGridClicked, radius, False))
+		if self.drawObject.solidMode == self.drawObject.solid :
+			if self.drawObject.drawMode == self.drawObject.lineMode :
+				"appending solid line"
+				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, True, False))
+			elif self.drawObject.drawMode == self.drawObject.circleMode:
+				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+				circles.append((self.xGridClicked, self.yGridClicked, radius, True, False))	
+		elif self.drawObject.solidMode == self.drawObject.dashed:
+			if self.drawObject.drawMode == self.drawObject.lineMode :
+				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False, False))
+			elif self.drawObject.drawMode == self.drawObject.circleMode:
+				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+				circles.append((self.xGridClicked, self.yGridClicked, radius, False, False))
 		self.compute_vertices()	
 		
 		self.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))
@@ -388,23 +366,14 @@ class View:
 		vertices_dict = {}
 		self.viewDict['vertices'] = []
 		vertices_list = self.viewDict['vertices']
-		for line in self.viewDict['solidLines']:
-			x1,y1,x2,y2,selected = line
+		for line in self.viewDict['Lines']:
+			x1,y1,x2,y2,solid, selected = line
 			if not ((x1,y1) in vertices_dict):
 				vertices_dict[(x1,y1)]=(x1,y1)
 				vertices_list.append((x1,y1))	
 			if not ((x2,y2) in vertices_dict):
 				vertices_dict[(x2,y2)]=(x2,y2)
 				vertices_list.append((x2,y2))
-		for line in self.viewDict['dashedLines']:
-			x1,y1,x2,y2,selected = line
-			if not ((x1,y1) in vertices_dict):
-				vertices_dict[(x1,y1)]=(x1,y1)
-				vertices_list.append((x1,y1))	
-			if not ((x2,y2) in vertices_dict):
-				vertices_dict[(x2,y2)]=(x2,y2)
-				vertices_list.append((x2,y2))
-
 	def print_xml(self):
 		#create the root element
 		doc = Document()
@@ -429,8 +398,8 @@ class View:
 		edgesElem = doc.createElement("edges")
 		viewElem.appendChild(edgesElem)
 		#iterate over the edges and add them to the xml
-		for line in self.viewDict['solidLines']:
-			x1,y1,x2,y2,selected = line
+		for line in self.viewDict['Lines']:
+			x1,y1,x2,y2,solid,selected = line
 			vertexElem1 = doc.createElement("vertex")
 			vertexElem1.setAttribute("x",str(x1))
 			vertexElem1.setAttribute("y",str(y1))
@@ -440,36 +409,32 @@ class View:
 			edgeElem = doc.createElement("edge")
 			edgeElem.appendChild(vertexElem1)
 			edgeElem.appendChild(vertexElem2)
-			edgeElem.setAttribute("type", "Solid")
-			edgesElem.appendChild(edgeElem)
-		for line in self.viewDict['dashedLines']:
-			x1,y1,x2,y2,selected = line
-			vertexElem1 = doc.createElement("vertex")
-			vertexElem1.setAttribute("x",str(x1))
-			vertexElem1.setAttribute("y",str(y1))
-			vertexElem2 = doc.createElement("vertex")
-			vertexElem2.setAttribute("x",str(x2))
-			vertexElem2.setAttribute("y",str(y2))
-			edgeElem = doc.createElement("edge")
-			edgeElem.appendChild(vertexElem1)
-			edgeElem.appendChild(vertexElem2)
-			edgeElem.setAttribute("type", "Dashed")
+			if solid:
+				edgeElem.setAttribute("type", "Solid")
+			else:
+				edgeElem.setAttribute("type", "Dashed")
 			edgesElem.appendChild(edgeElem)
 		return doc
 
 class Draw:
 	def __init__(self):
+		#initialize variables
+		#initialize mainWindow dimensions
 		self.mainWindowWidth = 960
 		self.mainWindowHeight = 720
+		#initialize draw modes
 		self.modeNotSelected = 0		
-		self.solidLineMode = 1
-		self.dashedLineMode = 2
-		self.rectangleMode = 3
-		self.circleMode = 4		
-		self.splineMode = 5		
-		self.selectMode = 6
-		self.deleteMode = 7
+		self.lineMode = 1
+		self.rectangleMode = 2
+		self.circleMode = 3		
+		self.splineMode = 4		
+		self.selectMode = 5
+		self.deleteMode = 6
 		self.drawMode = self.modeNotSelected
+		#initialize solid modes		
+		self.solid = 0
+		self.dashed = 1
+		self.solidMode = self.solid		
 		self.notebookViews = []
 	
 		self.mainWindow = gtk.Window(gtk.WINDOW_TOPLEVEL)
@@ -601,10 +566,10 @@ class Draw:
 		self.buttonZoomIn.set_label("ZoomIn")
 		self.buttonZoomOut = gtk.Button()
 		self.buttonZoomOut.set_label("ZoomOut")
-		self.buttonSolidLine = gtk.Button()
-		self.buttonSolidLine.set_label("Solid Line")
-		self.buttonDashedLine = gtk.Button()
-		self.buttonDashedLine.set_label("Dashed Line")
+		self.buttonSolid = gtk.Button()
+		self.buttonSolid.set_label("Dashed")		
+		self.buttonLine = gtk.Button()
+		self.buttonLine.set_label("Line")
 		
 		self.buttonRectangle = gtk.Button()
 		self.buttonRectangle.set_label("Rectangle")
@@ -620,8 +585,8 @@ class Draw:
 		#add buttons to hbox
 		self.buttonHBox.pack_start(self.buttonZoomIn, False, False)
 		self.buttonHBox.pack_start(self.buttonZoomOut, False, False)
-		self.buttonHBox.pack_start(self.buttonSolidLine, False, False)
-		self.buttonHBox.pack_start(self.buttonDashedLine, False, False)
+		self.buttonHBox.pack_start(self.buttonSolid, False, False)
+		self.buttonHBox.pack_start(self.buttonLine, False, False)
 		self.buttonHBox.pack_start(self.buttonRectangle, False, False)	
 		self.buttonHBox.pack_start(self.buttonCircle, False, False)	
 		self.buttonHBox.pack_start(self.buttonSpline, False, False)				
@@ -652,8 +617,8 @@ class Draw:
 		self.mainWindow.connect("destroy", lambda w: gtk.main_quit())
 		self.buttonZoomIn.connect("clicked", self.on_buttonZoomIn_clicked)
 		self.buttonZoomOut.connect("clicked", self.on_buttonZoomOut_clicked)
-		self.buttonSolidLine.connect("clicked", self.on_buttonSolidLine_clicked)
-		self.buttonDashedLine.connect("clicked", self.on_buttonDashedLine_clicked)
+		self.buttonSolid.connect("clicked", self.on_buttonSolid_clicked)
+		self.buttonLine.connect("clicked", self.on_buttonLine_clicked)
 		self.buttonRectangle.connect("clicked", self.on_buttonRectangle_clicked)
 		self.buttonCircle.connect("clicked", self.on_buttonCircle_clicked)
 		self.buttonSpline.connect("clicked", self.on_buttonSpline_clicked)
@@ -683,8 +648,8 @@ class Draw:
 		self.buttonHBox.show()
 		self.buttonZoomIn.show()
 		self.buttonZoomOut.show()
-		self.buttonSolidLine.show()
-		self.buttonDashedLine.show()
+		self.buttonSolid.show()
+		self.buttonLine.show()
 		self.buttonRectangle.show()
 		self.buttonCircle.show()
 		self.buttonSpline.show()
@@ -821,14 +786,17 @@ class Draw:
 		return
 
 
-	def on_buttonSolidLine_clicked(self, widget):
-		self.drawMode = self.solidLineMode
+	def on_buttonSolid_clicked(self, widget):
+		if self.solidMode == self.solid:		
+			self.solidMode = self.dashed
+			self.buttonSolid.set_label("Solid")
+		else:
+			self.solidMode = self.solid
+			self.buttonSolid.set_label("Dashed")
 		return
-
-	def on_buttonDashedLine_clicked(self, widget):	
-		self.drawMode = self.dashedLineMode
+	def on_buttonLine_clicked(self, widget):
+		self.drawMode = self.lineMode
 		return
-	
 	def on_buttonRectangle_clicked(self, widget):
 		self.drawMode = self.rectangleMode
 		return
@@ -853,24 +821,16 @@ class Draw:
 		self.currView = self.notebookViews[self.mainNotebook.get_current_page()]
 		#get the current active view
 		#iterate over the lines and delete the selected lines
-		solidLines = self.currView.viewDict['solidLines']
-		dashedLines = self.currView.viewDict['dashedLines']
+		lines = self.currView.viewDict['Lines']
 		circles = self.currView.viewDict['circles']
 		i = 0
-		for line in solidLines:
-			(x1,y1,x2,y2, selected) = line
+		for line in lines:
+			(x1,y1,x2,y2, solid, selected) = line
 			if selected:
-				del(solidLines[i])
+				del(lines[i])
 				i = i -1
 			i = i + 1
-		i = 0
-		for line in dashedLines:
-			(x1,y1,x2,y2, selected) = line
-			if selected:
-				del(dashedLines[i])
-				i = i -1
-			i = i + 1
-		i = 0
+		
 		for circle in circles:
 			(xc,yc,radius, selected) = circle
 			if selected:
@@ -899,22 +859,18 @@ class Draw:
 			self.frontView.viewDict = {}
 			self.topView.viewDict = {}
 			self.sideView.viewDict = {}
-			self.frontView.viewDict['solidLines'] = []
-			self.frontView.viewDict['dashedLines'] = []
+			self.frontView.viewDict['lines'] = []
 			self.frontView.viewDict['circles'] = []
-			self.topView.viewDict['solidLines'] = []
-			self.topView.viewDict['dashedLines'] = []
+			self.topView.viewDict['Lines'] = []
 			self.topView.viewDict['circles'] = []
-			self.sideView.viewDict['solidLines'] = []
-			self.sideView.viewDict['dashedLines'] = []
+			self.sideView.viewDict['Lines'] = []
 			self.sideView.viewDict['circles'] = []
 			#parse the file
 			tree = ET.parse(self.openFile)
 			root = tree.getroot()
 			#handle all the views	
 			frontViewEdges = root.findall("./front_view/edges/edge")
-			solidLines = self.frontView.viewDict['solidLines']
-			dashedLines = self.frontView.viewDict['dashedLines']
+			lines = self.frontView.viewDict['lines']
 			for edge in frontViewEdges:
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
@@ -926,14 +882,13 @@ class Draw:
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
-					solidLines.append((x1,y1,x2,y2,False))
+					lines.append((x1,y1,x2,y2,True,False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,False))
+					dashedLines.append((x1,y1,x2,y2,True,False))
 			self.frontView.compute_vertices()	
 			self.frontView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
 			topViewEdges = root.findall("./top_view/edges/edge")
-			solidLines = self.topView.viewDict['solidLines']
-			dashedLines = self.topView.viewDict['dashedLines']			
+			lines = self.topView.viewDict['Lines']			
 			for edge in topViewEdges:
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
@@ -945,14 +900,13 @@ class Draw:
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
-					solidLines.append((x1,y1,x2,y2,False))
+					lines.append((x1,y1,x2,y2,True, False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,False))
+					dashedLines.append((x1,y1,x2,y2,False, False))
 			self.topView.compute_vertices()	
 			self.topView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))				
 			sideViewEdges = root.findall("./side_view/edges/edge")
-			solidLines = self.sideView.viewDict['solidLines']
-			dashedLines = self.sideView.viewDict['dashedLines']			
+			lines = self.sideView.viewDict['lines']		
 			for edge in sideViewEdges:
 				#Extract edge type and cordinates of end points 
 				type = edge.attrib['type']
@@ -964,9 +918,9 @@ class Draw:
 				x2 = int(vertex2.attrib['x'])
 				y2 = int(vertex2.attrib['y'])
 				if (type == "Solid"):
-					solidLines.append((x1,y1,x2,y2,False))
+					lines.append((x1,y1,x2,y2,True,False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,False))
+					lines.append((x1,y1,x2,y2,True,False))
 			self.sideView.compute_vertices()	
 			self.sideView.drawingArea.draw(gtk.gdk.Rectangle(0,0,400,420))		
 		
