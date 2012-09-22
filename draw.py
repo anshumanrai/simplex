@@ -58,19 +58,28 @@ class View:
 		self.drawingArea.connect('expose-event',self.drawingarea_expose)
 		self.drawingArea.set_events(gtk.gdk.EXPOSURE_MASK | gtk.gdk.BUTTON_PRESS_MASK | gtk.gdk.BUTTON_RELEASE_MASK)
 		return
-	#Given gtk coordiantes of a drawing area, give out axis coordinates for the y axis 
+	#Given gtk coordiantes of a drawing area, give out real coordinates
 	def translate_gtk_to_real(self,x, y):
 		y = y / (self.zoomFactor * self.zoomLevel)
 		y = self.drawingAreaHeight - y
 		x = x / (self.zoomFactor * self.zoomLevel)
 
 		return (x, y)
-
+	#Given real coordiantes of a drawing area, give out gtk coordinates
 	def translate_real_to_gtk(self,x,y):
 		x = x * self.zoomLevel * self.zoomFactor
 		y = y * self.zoomLevel * self.zoomFactor
 		y = self.drawingAreaHeight * self.zoomLevel * self.zoomFactor - y
 		return (x, y)
+
+	#Given gtk dimension of a drawing area, give out real dimension
+	def translate_dimension_gtk_to_real(self,x):
+		x = x / (self.zoomFactor * self.zoomLevel)
+		return x
+	#Given real dimension of a drawing area, give out gtk dimension
+	def translate_dimension_real_to_gtk(self,x):
+		x = x * self.zoomLevel * self.zoomFactor
+		return x
 	def show(self):
 		self.drawingArea.show()
 		self.scrolledWindow.show()
@@ -103,6 +112,7 @@ class View:
 		for circle in self.viewDict['circles']:			
 			(xGridClicked, yGridClicked, radius, selected) = circle
 			xGridClicked, yGridClicked = self.translate_real_to_gtk(xGridClicked, yGridClicked)
+			radius = self.translate_dimension_real_to_gtk(radius)
 			self.draw_circle(xGridClicked, yGridClicked, radius, selected, 1.0)
 		return
 	
