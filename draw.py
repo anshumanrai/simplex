@@ -794,15 +794,19 @@ class Draw:
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
 		currZoomLevel = currView.zoomLevel
 		if currZoomLevel < 5:
-			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel +  1
+			currZoomLevel = currZoomLevel + 1
+			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
+			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
 			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
 		return
 
 	def on_buttonZoomOut_clicked(self, widget):		
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
 		currZoomLevel = currView.zoomLevel
-		if currZoomLevel > 1:		
-			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel - 1
+		if currZoomLevel > 1:
+			currZoomLevel = currZoomLevel - 1
+			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
+			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
 			currView.drawingArea.draw(gtk.gdk.Rectangle(0,0,420,400))
 		return
 
