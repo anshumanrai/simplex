@@ -26,6 +26,7 @@ class Draw:
 		self.dashed = 1
 		self.solidMode = self.solid		
 		self.notebookViews = []
+
 	
 		self.mainWindow = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.mainWindow.set_title("Draw")
@@ -188,8 +189,11 @@ class Draw:
 				
 		#initialize view objects 
 		self.frontView = View(View.FrontView, self)
+		self.frontView.viewType = View.FrontView
 		self.topView = View(View.TopView, self)
+		self.topView.viewType = View.TopView
 		self.sideView = View(View.SideView, self)
+		self.sideView.viewType = View.SideView
 
 		#add view objects to notebook		
 		self.frontView.add_to_notebook(self.mainNotebook)
@@ -295,43 +299,94 @@ class Draw:
 		frontViewCircles = self.frontView.viewDict['circles']
 		for circle in frontViewCircles:
 			#see if there is a matching box in the other views
-			matchCircleFront = matchCircleBox(circle, self.sideView)
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleFront
-			if match:
+			matchCircleFrontTop = matchCircleBox(circle, self.frontView, self.topView)
+			for matchResult in matchCircleFrontTop:
+				x1,y1,z1,x2,y2,z2,radius = matchResult
 				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleFront
-			if match:
-				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-		topViewCircles = self.topView.viewDict['circles']
-		for circle in frontViewCircles:
-			#see if there is a matching box in the other views
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleBox(circle, self.frontView)
-			if match:
-				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-			matchCircleFront = matchCircleBox(circle, self.sideView)
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleFront
-			if match:
-				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-		
-		sideViewCircles = self.sideView.viewDict['circles']
-		for circle in frontViewCircles:
-			#see if there is a matching box in the other views
-			matchCircleFront = matchCircleBox(circle, self.frontView)
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleFront
-			if match:
-				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-			matchCircleFront = matchCircleBox(circle, self.topView)
-			(match, cylidnerx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius) = matchCircleFront
-			if match:
-				#append cylinder
-				self.cylinder3d.append(cylinderx1, cylindery1, cylinderz1, cylinderx2, cylindery2, cylinderz2, radius)
-	
+				self.cylinder3d.append(x1, y1, z1, x2, y2, z2, radius)
+			
 		return
+
+	def match(self, circle, view1, view2):
+		retVal = []
+		if ((view1.viewType == View.FrontView) and (view2.viewType == View.TopView)):
+			#circle is in front view and box to be matched in top view
+			xc, yc, radius, solid, selected = circle
+			xcminusr = xc - radius
+			xvplusr = xc + radius
+			edges1 = []
+			#find edge1 => passes through xcminusr and perpendicular to x axis
+			for line in view2.viewDict['lines']:
+				x11, y11, x12, y12, solid, selected = line
+				if (x11 == x12):
+					#=>edge is perpendicular to x axis
+					if (x11 == xcminusr):
+						edges1.append(line)
+			edges2 = []			
+			#find edge2 => passes through xcplusr and perpendicular to x axis
+			for line in view2.viewDict['lines']:
+				x21, y21, x22, y22, solid, selected = line
+				if (x21 == x22):
+					#=>edge is perpendicular to x axis
+					if (x21 == xcplusr):
+						edges2.append(line)
+			
+			#find edge e3 perpendicular to edge1 and intersect between e1 and e2 is  2 * radius
+			for line in view2.viewDict['lines']:
+				x31, y31, x32,y32, solid, selected = line
+				if (y31 == y32):
+				 	#=>edge is pependicular to y axis
+					#now if intersect between e1 and e2 is 2 * radius => valid edge3 
+					for edge1 in edges1:
+						for edge2 in edges2:
+							x11, y11, x12, y12, solid, selected = edge1
+							x21, y21, x22, y22, solid, selected = edge2
+							#check if intersect point lies on edge3
+							if self.point_on_line(x11,y31,x31,y31, x32,y32):
+								if self.point_on_line(x21,y31, x31,y31, x32,y32):
+									#=> edge3 is valid
+									edges3.append((line, edge1, edge2))
+			#now iterate over the edges and return a pair
+			i = 0			
+			for edge3 in edge3:
+				j = 0
+				for edge4 in edge3:	
+					if not (i == j):
+						edge33, edge31, edge32 = edge3
+						edge43, edge41, edge42 = edge4
+						#if edge31 = edge41 and edge32 = edge42 append a cylinder
+						if (edge31 == edge41):
+							if (edge32 == edge41):	
+								x1, y1, z1 = xc, edge33[1], yc 
+								x2, y2, z2 = xc, edge43[1], yc
+								retVal.append((x1,y1,z1,x2,y2,z2,radius))				
+						#if edge31 = edge42 and edge32 = edge41 append a cylinder
+						if (edge31 == edge42):
+							if (edge32 == edge41):	
+								x1, y1, z1 = xc, edge33[1], yc 
+								x2, y2, z2 = xc, edge43[1], yc
+								retVal.append((x1,y1,z1,x2,y2,z2,radius))
+						j = j + 1
+					i = i + 1
+			return retVal
+								
+
+	#test if point lies on segment by checking distances 
+	def point_on_line(x, y, x1, y1, x2, y2):
+		distance1 = self.distance_two_points(x,y, x1, y1)
+		distance2 = self.distance_two_points(x,y,x2,y2)
+		distance12 = self.distance_two_points(x1,y1,x2,y2)
+		if ((distance1 + distance2) == distance12):
+			return True
+		return False
+
+	#distance between a point a (x1, y1) and a point (x2,y)
+	def distance_two_points(self, x1, y1, x2, y2):
+		y2y1 = float(y2) - float(y1)
+		x2x1 = float(x2) - float(x1)		
+		distanceSquared = y2y1*y2y1 + x2x1*x2x1
+		retVal = math.sqrt(distanceSquared)
+		return retVal
 
 	def matchCircleBox(circle, view):
 		return (False, 0,0,0,0,0,0)

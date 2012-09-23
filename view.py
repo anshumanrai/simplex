@@ -14,7 +14,8 @@ class View:
 		self.type = type
 		#the draw object which has initialized this view - for book keeping purposes 
 		self.drawObject = drawObject
-		#initialize variables	
+		#initialize variables
+		self.viewType = View.FrontView	
 		self.drawingAreaWidth = 420
 		self.drawingAreaHeight = 400
 		self.tableWidth = 420
