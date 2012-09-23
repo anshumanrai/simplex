@@ -457,6 +457,20 @@ class Draw:
 			edgeElem.setAttribute("y2",str(y2))
 			edgeElem.setAttribute("z2",str(z2))
 			edgesElem.appendChild(edgeElem)
+		#create the edges element
+		cylindersElem = doc.createElement("cylinders")
+		solidElem.appendChild(cylindersElem)
+		for cylinder in self.cylinder3d:
+			x1,y1,z1,x2,y2,z2, radius = cylinder
+			cylinderElem = doc.createElement('cylinder')
+			cylinderElem.setAttribute("x1",str(x1))
+			cylinderElem.setAttribute("y1",str(y1))
+			cylinderElem.setAttribute("z1",str(z1))
+			cylinderElem.setAttribute("x2",str(x2))
+			cylinderElem.setAttribute("y2",str(y2))
+			cylinderElem.setAttribute("z2",str(z2))
+			cylinderElem.setAttribute("radius",str(radius))
+			cylindersElem.appendChild(cylinderElem)
 		return doc
 	def on_buttonZoomIn_clicked(self, widget):
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
