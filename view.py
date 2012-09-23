@@ -325,15 +325,16 @@ class View:
 			if self.drawObject.drawMode == self.drawObject.lineMode :
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, True, False))
 			elif self.drawObject.drawMode == self.drawObject.circleMode:
-				
 				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+				radius = int(radius)
 				circle = (self.xGridClicked, self.yGridClicked, radius, True, False)
 				circles.append(circle)	
 		elif self.drawObject.solidMode == self.drawObject.dashed:
 			if self.drawObject.drawMode == self.drawObject.lineMode :
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False, False))
 			elif self.drawObject.drawMode == self.drawObject.circleMode:
-				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+				radius = self.distance_two_points(self.xGridClicked,self.yGridClicked,self.xGridReleased,self.yGridReleased)
+				radius = int(radius)		
 				circle = (self.xGridClicked, self.yGridClicked, radius, False, False)
 				circles.append(circle)
 		self.compute_vertices()	
@@ -398,5 +399,21 @@ class View:
 			else:
 				edgeElem.setAttribute("type", "Dashed")
 			edgesElem.appendChild(edgeElem)
+		#create the circles element
+		circlesElem = doc.createElement("circles")
+		viewElem.appendChild(circlesElem)
+		#iterate over the edges and add them to the xml
+		for circle in self.viewDict['circles']:
+			x,y,radius,solid,selected = circle
+			circleElem = doc.createElement("circle")
+			circleElem.setAttribute("x",str(x))
+			circleElem.setAttribute("y",str(y))
+			circleElem.setAttribute("radius", str(radius))
+			if solid:
+				circleElem.setAttribute("type", "Solid")
+			else:
+				circleElem.setAttribute("type", "Dashed")
+			circlesElem.appendChild(circleElem)
+		
 		return doc
 

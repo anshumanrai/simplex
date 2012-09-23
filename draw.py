@@ -592,9 +592,22 @@ class Draw:
 				if (type == "Solid"):
 					lines.append((x1,y1,x2,y2,True,False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,True,False))
-			self.frontView.compute_vertices()	
-			self.frontView.drawingArea.queue_draw()			
+					dashedLines.append((x1,y1,x2,y2,False,False))
+			self.frontView.compute_vertices()
+			frontViewCircles = root.findall("./front_view/circles/circle")
+			circles = self.frontView.viewDict['circles']			
+			for circle in frontViewCircles:
+				#Extract circle attributes
+				type = circle.attrib['type']
+				x = int(circle.attrib['x'])
+				y = int(circle.attrib['y'])
+				radius = int(circle.attrib['radius'])
+				if (type == "Solid"):
+					circles.append((x,y,radius,True,False))
+				elif (type == "Dashed"):
+					circles.append((x,y,radius,False,False))
+
+			self.frontView.drawingArea.queue_draw()
 			topViewEdges = root.findall("./top_view/edges/edge")
 			lines = self.topView.viewDict['lines']			
 			for edge in topViewEdges:
@@ -612,6 +625,20 @@ class Draw:
 				elif (type == "Dashed"):
 					dashedLines.append((x1,y1,x2,y2,False, False))
 			self.topView.compute_vertices()	
+
+			topViewCircles = root.findall("./top_view/circles/circle")
+			circles = self.topView.viewDict['circles']			
+			for circle in topViewCircles:
+				#Extract circle attributes
+				type = circle.attrib['type']
+				x = int(circle.attrib['x'])
+				y = int(circle.attrib['y'])
+				radius = int(circle.attrib['radius'])
+				if (type == "Solid"):
+					circles.append((x,y,radius,True,False))
+				elif (type == "Dashed"):
+					circles.append((x,y,radius,False,False))
+	
 			self.topView.drawingArea.queue_draw()			
 			sideViewEdges = root.findall("./side_view/edges/edge")
 			lines = self.sideView.viewDict['lines']		
@@ -628,8 +655,22 @@ class Draw:
 				if (type == "Solid"):
 					lines.append((x1,y1,x2,y2,True,False))
 				elif (type == "Dashed"):
-					lines.append((x1,y1,x2,y2,True,False))
+					lines.append((x1,y1,x2,y2,False,False))
 			self.sideView.compute_vertices()	
+	
+			sideViewCircles = root.findall("./side_view/circles/circle")
+			circles = self.sideView.viewDict['circles']			
+			for circle in sideViewCircles:
+				#Extract circle attributes
+				type = circle.attrib['type']
+				x = int(circle.attrib['x'])
+				y = int(circle.attrib['y'])
+				radius = int(circle.attrib['radius'])
+				if (type == "Solid"):
+					circles.append((x,y,radius,True,False))
+				elif (type == "Dashed"):
+					circles.append((x,y,radius,False,False))
+
 			self.sideView.drawingArea.queue_draw()	
 		
 		return
