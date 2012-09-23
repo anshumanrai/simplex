@@ -299,21 +299,22 @@ class Draw:
 		frontViewCircles = self.frontView.viewDict['circles']
 		for circle in frontViewCircles:
 			#see if there is a matching box in the other views
-			matchCircleFrontTop = matchCircleBox(circle, self.frontView, self.topView)
+			matchCircleFrontTop = self.matchCircleBox(circle, self.frontView, self.topView)
 			for matchResult in matchCircleFrontTop:
+				print "matchResult ", matchResult
 				x1,y1,z1,x2,y2,z2,radius = matchResult
 				#append cylinder
-				self.cylinder3d.append(x1, y1, z1, x2, y2, z2, radius)
+				self.cylinders3d.append((x1, y1, z1, x2, y2, z2, radius))
 			
 		return
 
-	def match(self, circle, view1, view2):
+	def matchCircleBox(self, circle, view1, view2):
 		retVal = []
 		if ((view1.viewType == View.FrontView) and (view2.viewType == View.TopView)):
 			#circle is in front view and box to be matched in top view
 			xc, yc, radius, solid, selected = circle
 			xcminusr = xc - radius
-			xvplusr = xc + radius
+			xcplusr = xc + radius
 			edges1 = []
 			#find edge1 => passes through xcminusr and perpendicular to x axis
 			for line in view2.viewDict['lines']:
@@ -322,6 +323,7 @@ class Draw:
 					#=>edge is perpendicular to x axis
 					if (x11 == xcminusr):
 						edges1.append(line)
+						print "edge 1 ", line
 			edges2 = []			
 			#find edge2 => passes through xcplusr and perpendicular to x axis
 			for line in view2.viewDict['lines']:
@@ -330,8 +332,9 @@ class Draw:
 					#=>edge is perpendicular to x axis
 					if (x21 == xcplusr):
 						edges2.append(line)
-			
+						print "edge 2 ", line
 			#find edge e3 perpendicular to edge1 and intersect between e1 and e2 is  2 * radius
+			edges3 = []
 			for line in view2.viewDict['lines']:
 				x31, y31, x32,y32, solid, selected = line
 				if (y31 == y32):
@@ -346,33 +349,40 @@ class Draw:
 								if self.point_on_line(x21,y31, x31,y31, x32,y32):
 									#=> edge3 is valid
 									edges3.append((line, edge1, edge2))
+									print " edge 3 ", line, edge1, edge2
 			#now iterate over the edges and return a pair
 			i = 0			
-			for edge3 in edge3:
+			for edge3 in edges3:
+				print "edge 3 ", edge3
 				j = 0
-				for edge4 in edge3:	
-					if not (i == j):
+				for edge4 in edges3:
+					print "edge 4 ", edge4					
+					if (i > j):
 						edge33, edge31, edge32 = edge3
 						edge43, edge41, edge42 = edge4
 						#if edge31 = edge41 and edge32 = edge42 append a cylinder
 						if (edge31 == edge41):
-							if (edge32 == edge41):	
+							print "edge 31 == edge 41"
+							if (edge32 == edge42):	
+								print "edge32 == edge 42"
 								x1, y1, z1 = xc, edge33[1], yc 
 								x2, y2, z2 = xc, edge43[1], yc
 								retVal.append((x1,y1,z1,x2,y2,z2,radius))				
 						#if edge31 = edge42 and edge32 = edge41 append a cylinder
 						if (edge31 == edge42):
-							if (edge32 == edge41):	
+							print "edge 31 == edge 42"
+							if (edge32 == edge41):
+								print "edge 32 == edge 41"	
 								x1, y1, z1 = xc, edge33[1], yc 
 								x2, y2, z2 = xc, edge43[1], yc
 								retVal.append((x1,y1,z1,x2,y2,z2,radius))
-						j = j + 1
-					i = i + 1
+					j = j + 1
+				i = i + 1
 			return retVal
 								
 
 	#test if point lies on segment by checking distances 
-	def point_on_line(x, y, x1, y1, x2, y2):
+	def point_on_line(self, x, y, x1, y1, x2, y2):
 		distance1 = self.distance_two_points(x,y, x1, y1)
 		distance2 = self.distance_two_points(x,y,x2,y2)
 		distance12 = self.distance_two_points(x1,y1,x2,y2)
@@ -388,8 +398,6 @@ class Draw:
 		retVal = math.sqrt(distanceSquared)
 		return retVal
 
-	def matchCircleBox(circle, view):
-		return (False, 0,0,0,0,0,0)
 	def valid_edge_3d(self, edge):
 		x1,y1,z1,x2,y2,z2 = edge		
 		#Evaluate the front view projection of the edge
@@ -460,7 +468,7 @@ class Draw:
 		#create the edges element
 		cylindersElem = doc.createElement("cylinders")
 		solidElem.appendChild(cylindersElem)
-		for cylinder in self.cylinder3d:
+		for cylinder in self.cylinders3d:
 			x1,y1,z1,x2,y2,z2, radius = cylinder
 			cylinderElem = doc.createElement('cylinder')
 			cylinderElem.setAttribute("x1",str(x1))
