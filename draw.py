@@ -16,10 +16,11 @@ class Draw:
 		self.modeNotSelected = 0		
 		self.lineMode = 1
 		self.rectangleMode = 2
-		self.circleMode = 3		
-		self.splineMode = 4		
-		self.selectMode = 5
-		self.deleteMode = 6
+		self.circleMode = 3	
+		self.arcMode = 4	
+		self.splineMode = 5		
+		self.selectMode = 6
+		self.deleteMode = 7
 		self.drawMode = self.modeNotSelected
 		#initialize solid modes		
 		self.solid = 0
@@ -89,6 +90,7 @@ class Draw:
 		#create menu items
 		self.editMenu = gtk.MenuItem("Edit")
 		self.editSubMenu = gtk.Menu()
+		
 
 		#create menu sub items
 		#create a buffer
@@ -124,7 +126,6 @@ class Draw:
 		# Create a new menu-item with a name...
 		self.menuitemInferModel = gtk.MenuItem(buf)
 		# ...and add it to the menu.
-		self.inferSubMenu.append(self.menuitemInferModel)
 		# Connect signals
 		self.menuitemInferModel.connect("activate", self.on_menuitem_infer_model_activated)
 		
@@ -166,6 +167,8 @@ class Draw:
 		self.buttonRectangle.set_label("Rectangle")
 		self.buttonCircle = gtk.Button()
 		self.buttonCircle.set_label("Circle")
+		self.buttonArc = gtk.Button()
+		self.buttonArc.set_label("Arc")
 		self.buttonSpline = gtk.Button()
 		self.buttonSpline.set_label("Spline")
 
@@ -179,7 +182,8 @@ class Draw:
 		self.buttonHBox.pack_start(self.buttonSolid, False, False)
 		self.buttonHBox.pack_start(self.buttonLine, False, False)
 		self.buttonHBox.pack_start(self.buttonRectangle, False, False)	
-		self.buttonHBox.pack_start(self.buttonCircle, False, False)	
+		self.buttonHBox.pack_start(self.buttonCircle, False, False)
+		self.buttonHBox.pack_start(self.buttonArc, False, False)		
 		self.buttonHBox.pack_start(self.buttonSpline, False, False)				
 		self.buttonHBox.pack_start(self.buttonSelect, False, False)
 		self.buttonHBox.pack_start(self.buttonDelete, False, False)		
@@ -215,6 +219,7 @@ class Draw:
 		self.buttonLine.connect("clicked", self.on_buttonLine_clicked)
 		self.buttonRectangle.connect("clicked", self.on_buttonRectangle_clicked)
 		self.buttonCircle.connect("clicked", self.on_buttonCircle_clicked)
+		self.buttonArc.connect("clicked", self.on_buttonArc_clicked)
 		self.buttonSpline.connect("clicked", self.on_buttonSpline_clicked)
 		self.buttonSelect.connect("clicked", self.on_buttonSelect_clicked)
 		self.buttonDelete.connect("clicked", self.on_buttonDelete_clicked)
@@ -246,6 +251,7 @@ class Draw:
 		self.buttonLine.show()
 		self.buttonRectangle.show()
 		self.buttonCircle.show()
+		self.buttonArc.show()
 		self.buttonSpline.show()
 		self.buttonSelect.show()
 		self.buttonDelete.show()
@@ -256,21 +262,50 @@ class Draw:
 
 
 		return
-	def infer_3d_model(self):
-		#We look at the front view vertices and the side view vertices and for each vertex whose x axis values match we add a 3d vertex
+	def infer_3d_model(self, frontViewActive, topViewActive, sideViewActive):
+		#We look at the front view vertices and the top view vertices and for each vertex whose x axis values match we add a 3d vertex
 		self.vertices3d = []
-		frontViewVertices = self.frontView.viewDict['vertices']
-		topViewVertices = self.topView.viewDict['vertices']
-		vertices3d_dict = {}
-		for vertex_front in frontViewVertices:
-			x_front, z_front =  vertex_front
+		if (frontViewActive and topViewActive):		
+			frontViewVertices = self.frontView.viewDict['vertices']
+			topViewVertices = self.topView.viewDict['vertices']
+			vertices3d_dict = {}
+			for vertex_front in frontViewVertices:
+				x_front, z_front =  vertex_front
+				for vertex_top in topViewVertices:
+					x_top, y_top = vertex_top
+					if x_front == x_top:
+						vertex3d = (x_front, y_top, z_front)
+						if not (vertex3d in vertices3d_dict):
+							self.vertices3d.append(vertex3d)
+							vertices3d_dict[vertex3d] = vertex3d
+		
+		elif (frontViewActive and sideViewActive):
+			frontViewVertices = self.frontView.viewDict['vertices']
+			sideViewVertices = self.topView.viewDict['vertices']
+			vertices3d_dict = {}
+			for vertex_front in frontViewVertices:
+				x_front, z_front =  vertex_front
+				for vertex_side in sideViewVertices:
+					y_side, z_side = vertex_side
+					if z_front == z_side:
+						vertex3d = (x_front, y_side, z_front)
+						if not (vertex3d in vertices3d_dict):
+							self.vertices3d.append(vertex3d)
+							vertices3d_dict[vertex3d] = vertex3d
+
+		elif (topViewActive and sideViewActive):
+			topViewVertices = self.frontView.viewDict['vertices']
+			sideViewVertices = self.topView.viewDict['vertices']
+			vertices3d_dict = {}
 			for vertex_top in topViewVertices:
-				x_top, y_top = vertex_top
-				if x_front == x_top:
-					vertex3d = (x_front, y_top, z_front)
-					if not (vertex3d in vertices3d_dict):
-						self.vertices3d.append(vertex3d)
-						vertices3d_dict[vertex3d] = vertex3d
+				x_top, y_top =  vertex_top
+				for vertex_side in sideViewVertices:
+					y_side, z_side = vertex_side
+					if y_top == y_side:
+						vertex3d = (x_top, y_top, z_side)
+						if not (vertex3d in vertices3d_dict):
+							self.vertices3d.append(vertex3d)
+							vertices3d_dict[vertex3d] = vertex3d
 		'''
 		We look at a sorted view of all possible edges from the 3d vertices Vi, vj
 		For each edge whose projection edge on each of the vthree faces - front, top and side is either 		contained within an edge on the view or is a vertex on the web, we mark as a 3d edge
@@ -284,7 +319,7 @@ class Draw:
 				xi,yi,zi = self.vertices3d[i]
 				xj, yj, zj = self.vertices3d[j]
 				currEdge = (xi,yi,zi,xj,yj,zj)
-				if self.valid_edge_3d(currEdge):
+				if self.valid_edge_3d(currEdge, frontViewActive, topViewActive, sideViewActive):
 					self.edges3d.append(currEdge)
 
 		''' Process Circles. For each circle we look at the other views. If the other view has a box
@@ -296,15 +331,17 @@ class Draw:
 
 		#iterate over each view and find all the circles
 
-		frontViewCircles = self.frontView.viewDict['circles']
-		for circle in frontViewCircles:
-			#see if there is a matching box in the other views
-			matchCircleFrontTop = self.matchCircleBox(circle, self.frontView, self.topView)
-			for matchResult in matchCircleFrontTop:
-				print "matchResult ", matchResult
-				x1,y1,z1,x2,y2,z2,radius = matchResult
-				#append cylinder
-				self.cylinders3d.append((x1, y1, z1, x2, y2, z2, radius))
+		if frontViewActive:
+			frontViewCircles = self.frontView.viewDict['circles']
+			for circle in frontViewCircles:
+				if topViewActive:
+					#see if there is a matching box in the other views
+					matchCircleFrontTop = self.matchCircleBox(circle, self.frontView, self.topView)
+					for matchResult in matchCircleFrontTop:
+						print "matchResult ", matchResult
+						x1,y1,z1,x2,y2,z2,radius = matchResult
+						#append cylinder
+						self.cylinders3d.append((x1, y1, z1, x2, y2, z2, radius))
 			
 		return
 
@@ -398,41 +435,45 @@ class Draw:
 		retVal = math.sqrt(distanceSquared)
 		return retVal
 
-	def valid_edge_3d(self, edge):
-		x1,y1,z1,x2,y2,z2 = edge		
-		#Evaluate the front view projection of the edge
-		#Case 1, x1 = x2 and z1 = z2 => projection is a point x1,z1
-		if ((x1 == x2) and (z1 == z2)):
-			vertexProjected = (x1,z1)
-			if not (self.frontView.vertex_in_view(vertexProjected)):
-				return False
-		else:
-			#=>projection is an edge
-			edgeProjected = (x1, z1, x2, z2)
-			if not(self.frontView.edge_in_view(edgeProjected)):
-				return False
-		#Evaluate the top view projection of the edge
-		#Case 1, x1 = x2 and y1 = y2 => projection is a point x1,y1
-		if ((x1 == x2) and (y1 == y2)):
-			vertexProjected = (x1,y1)
-			if not (self.topView.vertex_in_view(vertexProjected)):
-				return False
-		else:
-			#=>projection is an edge
-			edgeProjected = (x1, y1, x2, y2)
-			if not(self.topView.edge_in_view(edgeProjected)):
-				return False
-		#Evaluate the side view projection of the edge
-		#Case 1, y1 = y2 and z1 = z2 => projection is a point y1,z1
-		if ((y1 == y2) and (z1 == z2)):
-			vertexProjected = (y1,z1)				
-			if not (self.sideView.vertex_in_view(vertexProjected)):				
-				return False
-		else:
-			#=>projection is an edge
-			edgeProjected = (y1, z1, y2, z2)
-			if not(self.sideView.edge_in_view(edgeProjected)):
-				return False
+	def valid_edge_3d(self, edge, frontViewActive, topViewActive, sideViewActive):
+		x1,y1,z1,x2,y2,z2 = edge
+		if frontViewActive:		
+			#Evaluate the front view projection of the edge
+			#Case 1, x1 = x2 and z1 = z2 => projection is a point x1,z1
+			if ((x1 == x2) and (z1 == z2)):
+				vertexProjected = (x1,z1)
+				if not (self.frontView.vertex_in_view(vertexProjected)):
+					return False
+			else:
+				#=>projection is an edge
+				edgeProjected = (x1, z1, x2, z2)
+				if not(self.frontView.edge_in_view(edgeProjected)):
+					return False
+		if topViewActive:
+			#Evaluate the top view projection of the edge
+			#Case 1, x1 = x2 and y1 = y2 => projection is a point x1,y1
+			if ((x1 == x2) and (y1 == y2)):
+				vertexProjected = (x1,y1)
+				if not (self.topView.vertex_in_view(vertexProjected)):
+					return False
+			else:
+				#=>projection is an edge
+				edgeProjected = (x1, y1, x2, y2)
+				if not(self.topView.edge_in_view(edgeProjected)):
+					return False
+
+		if sideViewActive:			
+			#Evaluate the side view projection of the edge
+			#Case 1, y1 = y2 and z1 = z2 => projection is a point y1,z1
+			if ((y1 == y2) and (z1 == z2)):
+				vertexProjected = (y1,z1)				
+				if not (self.sideView.vertex_in_view(vertexProjected)):				
+					return False
+			else:
+				#=>projection is an edge
+				edgeProjected = (y1, z1, y2, z2)
+				if not(self.sideView.edge_in_view(edgeProjected)):
+					return False
 		return True
 	
 	def print_xml_3d_model(self):
@@ -481,22 +522,27 @@ class Draw:
 			cylindersElem.appendChild(cylinderElem)
 		return doc
 	def on_buttonZoomIn_clicked(self, widget):
-		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
+		currView = self.notebookViews[self.mainNotebook.get_current_page()]
+		currZoomFactor = currView.zoomFactor		
 		currZoomLevel = currView.zoomLevel
 		if currZoomLevel < 5:
 			currZoomLevel = currZoomLevel + 1
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
-			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
+			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel*currZoomFactor, currView.drawingAreaHeight*currZoomLevel*currZoomFactor)
+			currView.table.set_size_request(currView.tableWidth*currZoomLevel*currZoomFactor, currView.tableHeight*currZoomLevel*currZoomFactor)
+			
 			currView.drawingArea.queue_draw()
 		return
 
 	def on_buttonZoomOut_clicked(self, widget):		
 		currView = self.notebookViews[self.mainNotebook.get_current_page()]		
+		currZoomFactor = currView.zoomFactor		
 		currZoomLevel = currView.zoomLevel
 		if currZoomLevel > 1:
 			currZoomLevel = currZoomLevel - 1
 			self.notebookViews[self.mainNotebook.get_current_page()].zoomLevel = currZoomLevel
-			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel, currView.drawingAreaHeight*currZoomLevel)
+			currView.drawingArea.set_size_request(currView.drawingAreaWidth*currZoomLevel*currZoomFactor, currView.drawingAreaHeight*currZoomLevel*currZoomFactor)
+			currView.table.set_size_request(currView.tableWidth*currZoomLevel*currZoomFactor, currView.tableHeight*currZoomLevel*currZoomFactor)
 			currView.drawingArea.queue_draw()
 		return
 
@@ -514,6 +560,10 @@ class Draw:
 		return
 	def on_buttonRectangle_clicked(self, widget):
 		self.drawMode = self.rectangleMode
+		return
+
+	def on_buttonArc_clicked(self, widget):
+		self.drawMode = self.arcMode
 		return
 
 	def on_buttonCircle_clicked(self, widget):
@@ -577,10 +627,13 @@ class Draw:
 			self.sideView.viewDict = {}
 			self.frontView.viewDict['lines'] = []
 			self.frontView.viewDict['circles'] = []
+			self.frontView.viewDict['arcs'] = []
 			self.topView.viewDict['lines'] = []
 			self.topView.viewDict['circles'] = []
+			self.topView.viewDict['arcs'] = []
 			self.sideView.viewDict['lines'] = []
 			self.sideView.viewDict['circles'] = []
+			self.sideView.viewDict['arcs'] = []
 			#parse the file
 			tree = ET.parse(self.openFile)
 			root = tree.getroot()
@@ -724,7 +777,34 @@ class Draw:
 		return
 	
 	def on_menuitem_infer_model_activated(self, widget):
-		self.infer_3d_model()
+		
+		dialog = gtk.Dialog("Open", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+		frontViewCheckButton = gtk.CheckButton("Front View")
+		dialog.vbox.pack_start(frontViewCheckButton)
+		frontViewCheckButton.show()
+		topViewCheckButton = gtk.CheckButton("Top View")
+		dialog.vbox.pack_start(topViewCheckButton)
+		topViewCheckButton.show()
+		sideViewCheckButton = gtk.CheckButton("Side View")
+		dialog.vbox.pack_start(sideViewCheckButton)
+		sideViewCheckButton.show()
+		
+		frontViewActive = False
+		topViewActive = False
+		sideViewActive = False
+		dialog.run
+		response = dialog.run()
+		if response == gtk.RESPONSE_OK:
+			frontViewActive = frontViewCheckButton.get_active()
+			topViewActive = topViewCheckButton.get_active()
+			sideViewActive = sideViewCheckButton.get_active()
+			print frontViewActive, topViewActive, sideViewActive
+			self.infer_3d_model(frontViewActive, topViewActive, sideViewActive)	
+		elif response == gtk.RESPONSE_CANCEL:
+			pass
+		dialog.destroy()
+
+		
 		return
 	def on_menuitem_infer_saveas_activated(self, widget):
 		self.saveAsFileModel = ""		
@@ -746,7 +826,9 @@ class Draw:
 		return
 	def on_keypress(self, widget, event):
 		if (event.keyval == gtk.keysyms.Delete):  
-			self.handle_delete()		
+			self.handle_delete()
+		elif (event.keyval == gtk.keysyms.Tab):
+			print "Tab entered"	
 		return
 	def on_menuitem_scan_activated(self, widget):
 		return

@@ -25,6 +25,7 @@ class View:
 		self.viewDict = {}
 		self.viewDict['lines'] = []
 		self.viewDict['circles'] = []
+		self.viewDict['arcs']= []
 		self.viewDict['vertices'] = []
 		
 
@@ -94,6 +95,8 @@ class View:
 	
 	
 	def drawingarea_expose(self, widget, data):
+		self.drawingArea.set_size_request(self.drawingAreaWidth * self.zoomLevel * self.zoomFactor, self.drawingAreaHeight * self.zoomLevel * self.zoomFactor)
+		self.table.set_size_request(self.tableWidth * self.zoomLevel * self.zoomFactor, self.tableHeight * self.zoomLevel * self.zoomFactor)	
 		self.cairoContext = widget.window.cairo_create()
 		self.draw_grid()
 		for line in self.viewDict['lines']:
@@ -117,9 +120,10 @@ class View:
 				return True
 		return False
 	def edge_in_view(self, edgeIn):
+		print edgeIn
 		x1In, y1In, x2In, y2In = edgeIn
 		for edge in self.viewDict['lines']:
-			x1, y1, x2, y2, type = edge
+			x1, y1, x2, y2, solid, selected= edge
 			#check if x1In, y1In lies on the edge
 			distancepIn1p1 = self.distance_two_points(x1In,y1In, x1, y1)
 			distancepIn1p2 = self.distance_two_points(x1In,y1In, x2, y2)
@@ -319,6 +323,7 @@ class View:
 		self.yGridReleased = yGrid
 		lines = self.viewDict['lines']
 		circles = self.viewDict['circles']
+		arcs = self.viewDict['arcs']
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidMode == self.drawObject.solid :
@@ -329,6 +334,40 @@ class View:
 				radius = int(radius)
 				circle = (self.xGridClicked, self.yGridClicked, radius, True, False)
 				circles.append(circle)	
+			elif self.drawObject.drawMode == self.drawObject.arcMode:
+				radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+				radius = int(radius)
+				self.saveAsFile = ""
+				dialog = gtk.Dialog("Open", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				startAngleLabel = gtk.Label()
+				startAngleLabel.set_text("Start Angle")
+				dialog.vbox.pack_start(startAngleLabel)
+				startAngleLabel.show()
+				startAngle = gtk.Entry()			
+				dialog.vbox.pack_start(startAngle)
+				startAngle.show()	
+
+				endAngleLabel = gtk.Label()
+				endAngleLabel.set_text("End Angle")
+				dialog.vbox.pack_start(endAngleLabel)
+				endAngleLabel.show()
+				endAngle = gtk.Entry()			
+				dialog.vbox.pack_start(endAngle)
+				endAngle.show()
+	
+				dialog.run
+				response = dialog.run()
+				if response == gtk.RESPONSE_OK:
+					startAngle = int(startAngle.get_text())
+					endAngle = int(endAngle.get_text())
+					radius = self.distance_two_points(self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased)
+					arc = (self.xGridClicked, self.yGridClicked,radius, startAngle, endAngle, True,False)
+					 
+				elif response == gtk.RESPONSE_CANCEL:
+					print "cancel"
+				dialog.destroy()
+		
+				
 		elif self.drawObject.solidMode == self.drawObject.dashed:
 			if self.drawObject.drawMode == self.drawObject.lineMode :
 				lines.append((self.xGridClicked, self.yGridClicked, self.xGridReleased, self.yGridReleased, False, False))
