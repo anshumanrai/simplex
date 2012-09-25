@@ -16,10 +16,10 @@ class View:
 		self.drawObject = drawObject
 		#initialize variables
 		self.viewType = View.FrontView	
-		self.drawingAreaWidth = 420
-		self.drawingAreaHeight = 400
-		self.tableWidth = 420
-		self.tableHeight = 400
+		self.drawingAreaWidth = 800
+		self.drawingAreaHeight = 160
+		self.tableWidth = 800
+		self.tableHeight = 1600
 		self.zoomFactor = 5
 		self.zoomLevel = 1
 		self.viewDict = {}
@@ -49,8 +49,8 @@ class View:
 		elif (self.type == View.SideView):
 			self.labelView = gtk.Label("Side View")
 		#set the size of widgets
-		self.drawingArea.set_size_request(self.drawingAreaWidth, self.drawingAreaHeight)
-		self.table.set_size_request(self.tableWidth, self.tableHeight)
+		self.drawingArea.set_size_request(self.drawingAreaWidth*self.zoomLevel*self.zoomFactor, self.drawingAreaHeight*self.zoomLevel*self.zoomFactor)
+		self.table.set_size_request(self.tableWidth*self.zoomLevel*self.zoomFactor, self.tableHeight*self.zoomLevel*self.zoomFactor)
 		#connect the signals
 		self.drawingArea.connect("motion-notify-event", self.on_DrawingArea_motion_notify)
 		self.drawingArea.connect("button-press-event", self.on_DrawingArea_button_pressed)
@@ -256,7 +256,7 @@ class View:
 			self.xGridClicked = xGrid
 			self.yGridClicked = yGrid
 			self.xGridClicked, self.yGridClicked = self.translate_gtk_to_real(self.xGridClicked, self.yGridClicked)
-			
+			print "Translated xgridclicked, ygridclicked ", self.xGridClicked, " ,", self.yGridClicked
 
 		if self.drawObject.drawMode == self.drawObject.selectMode:
 			#iterate over the lines and the line to which the event point is closest mark as selected
@@ -325,6 +325,9 @@ class View:
 		circles = self.viewDict['circles']
 		arcs = self.viewDict['arcs']
 		self.xGridReleased, self.yGridReleased = self.translate_gtk_to_real(self.xGridReleased, self.yGridReleased)
+		#check if this was an accidental click and drag
+		if (self.xGridClicked == self.xGridReleased) and (self.yGridClicked == self.yGridReleased):
+			return
 		#store line segments as end points and selected flag		
 		if self.drawObject.solidMode == self.drawObject.solid :
 			if self.drawObject.drawMode == self.drawObject.lineMode :

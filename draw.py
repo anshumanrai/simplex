@@ -126,6 +126,7 @@ class Draw:
 		# Create a new menu-item with a name...
 		self.menuitemInferModel = gtk.MenuItem(buf)
 		# ...and add it to the menu.
+		self.inferSubMenu.append(self.menuitemInferModel)
 		# Connect signals
 		self.menuitemInferModel.connect("activate", self.on_menuitem_infer_model_activated)
 		
@@ -653,7 +654,7 @@ class Draw:
 				if (type == "Solid"):
 					lines.append((x1,y1,x2,y2,True,False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,False,False))
+					lines.append((x1,y1,x2,y2,False,False))
 			self.frontView.compute_vertices()
 			frontViewCircles = root.findall("./front_view/circles/circle")
 			circles = self.frontView.viewDict['circles']			
@@ -684,7 +685,7 @@ class Draw:
 				if (type == "Solid"):
 					lines.append((x1,y1,x2,y2,True, False))
 				elif (type == "Dashed"):
-					dashedLines.append((x1,y1,x2,y2,False, False))
+					lines.append((x1,y1,x2,y2,False, False))
 			self.topView.compute_vertices()	
 
 			topViewCircles = root.findall("./top_view/circles/circle")
@@ -828,7 +829,59 @@ class Draw:
 		if (event.keyval == gtk.keysyms.Delete):  
 			self.handle_delete()
 		elif (event.keyval == gtk.keysyms.Tab):
-			print "Tab entered"	
+			currView = self.notebookViews[self.mainNotebook.get_current_page()]
+			if (self.drawMode == self.lineMode):
+				dialog = gtk.Dialog("Open", None, gtk.FILE_CHOOSER_ACTION_OPEN, (gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL, gtk.STOCK_OK, gtk.RESPONSE_OK))
+				startXLabel = gtk.Label()
+				startXLabel.set_text("start x")
+				dialog.vbox.pack_start(startXLabel)
+				startXLabel.show()
+				startX = gtk.Entry()			
+				dialog.vbox.pack_start(startX)
+				startX.show()	
+
+				startYLabel = gtk.Label()
+				startYLabel.set_text("start y")
+				dialog.vbox.pack_start(startYLabel)
+				startYLabel.show()
+				startY = gtk.Entry()			
+				dialog.vbox.pack_start(startY)
+				startY.show()
+
+				endXLabel = gtk.Label()
+				endXLabel.set_text("End X")
+				dialog.vbox.pack_start(endXLabel)
+				endXLabel.show()
+				endX = gtk.Entry()			
+				dialog.vbox.pack_start(endX)
+				endX.show()
+	
+				endYLabel = gtk.Label()
+				endYLabel.set_text("End Y")
+				dialog.vbox.pack_start(endYLabel)
+				endYLabel.show()
+				endY = gtk.Entry()			
+				dialog.vbox.pack_start(endY)
+				endY.show()
+
+				dialog.run
+				response = dialog.run()
+				if response == gtk.RESPONSE_OK:
+					startXCoordinate = int(startX.get_text())
+					startYCoordinate = int(startY.get_text())
+					endXCoordinate = int(endX.get_text())
+					endYCoordinate = int(endY.get_text())
+					lines = currView.viewDict['lines']
+					if self.solidMode == self.solid:
+						lines.append((startXCoordinate, startYCoordinate, endXCoordinate, endYCoordinate, True, False));
+					elif self.solidMode == self.solid:
+						lines.append((startXCoordinate, startYCoordinate, endXCoordinate, endYCoordinate, True, False));
+					
+				elif response == gtk.RESPONSE_CANCEL:
+					print "cancel"
+				dialog.destroy()
+				
+			
 		return
 	def on_menuitem_scan_activated(self, widget):
 		return
