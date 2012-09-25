@@ -9,6 +9,8 @@ from view import *
 class Draw:
 	def __init__(self):
 		#initialize variables
+		#initialize epsilon till which dimensions are considered to be same
+		self.epsilon = 0.01
 		#initialize mainWindow dimensions
 		self.mainWindowWidth = 720
 		self.mainWindowHeight = 640
@@ -867,10 +869,10 @@ class Draw:
 				dialog.run
 				response = dialog.run()
 				if response == gtk.RESPONSE_OK:
-					startXCoordinate = int(startX.get_text())
-					startYCoordinate = int(startY.get_text())
-					endXCoordinate = int(endX.get_text())
-					endYCoordinate = int(endY.get_text())
+					startXCoordinate = float(startX.get_text())
+					startYCoordinate = float(startY.get_text())
+					endXCoordinate = float(endX.get_text())
+					endYCoordinate = float(endY.get_text())
 					lines = currView.viewDict['lines']
 					if self.solidMode == self.solid:
 						lines.append((startXCoordinate, startYCoordinate, endXCoordinate, endYCoordinate, True, False));

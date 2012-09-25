@@ -21,13 +21,17 @@ def distance_two_points(x1, y1, z1, x2, y2,z2):
 
 display, start_display, add_menu, add_function_to_menu = init_display()
 print sys.argv[1]
+scaleFactor = 15
+xReduceFactor = 35
+yReduceFactor = 0
+zReduceFactor = 50
 dom = xml.dom.minidom.parse(sys.argv[1])
 vertices = dom.getElementsByTagName('vertex')
 for vertex in vertices:
 	x = int(vertex.attributes['x'].value)
 	y = int(vertex.attributes['y'].value)	
 	z = int(vertex.attributes['z'].value)
-	point = gp_Pnt(x,y,z)
+	point = gp_Pnt((x-xReduceFactor)*scaleFactor,(y-yReduceFactor)*scaleFactor,(z-zReduceFactor)*scaleFactor)
 	display.DisplayShape(make_vertex(point))
 edges = dom.getElementsByTagName('edge')
 for edge in edges:
@@ -37,7 +41,7 @@ for edge in edges:
 	x2 = int(edge.attributes['x2'].value)
 	y2 = int(edge.attributes['y2'].value)	
 	z2 = int(edge.attributes['z2'].value)
-	segment = GC_MakeSegment(gp_Pnt(x1,y1,z1),gp_Pnt(x2,y2,z2)).Value()	
+	segment = GC_MakeSegment(gp_Pnt((x1-xReduceFactor)*scaleFactor,(y1-yReduceFactor)*scaleFactor,(z1-zReduceFactor)*scaleFactor),gp_Pnt((x2-xReduceFactor)*scaleFactor,(y2-yReduceFactor)*scaleFactor,(z2-zReduceFactor)*scaleFactor)).Value()	
 	display.DisplayShape(make_edge(segment))	
 cylinders = dom.getElementsByTagName('cylinder')
 for cylinder in cylinders:

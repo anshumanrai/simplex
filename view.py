@@ -9,6 +9,8 @@ class View:
 	TopView = 2
 	SideView = 3
 	def __init__(self, type, drawObject):
+		#initialize epsilon till which dimensions are considered to be same
+		self.epsilon = 0.01
 		#copy initialization variables
 		#type of view - front, top or side		
 		self.type = type
